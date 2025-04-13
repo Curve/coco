@@ -15,7 +15,7 @@ _Coco_ is a C++20 coroutine library that aims to be convenient and simple to use
   ```cmake
   CPMFindPackage(
     NAME           coco
-    VERSION        1.0.0
+    VERSION        1.1.0
     GIT_REPOSITORY "https://github.com/Curve/coco"
   )
   ```
@@ -24,7 +24,7 @@ _Coco_ is a C++20 coroutine library that aims to be convenient and simple to use
   ```cmake
   include(FetchContent)
 
-  FetchContent_Declare(coco GIT_REPOSITORY "https://github.com/Curve/coco" GIT_TAG v1.0.0)
+  FetchContent_Declare(coco GIT_REPOSITORY "https://github.com/Curve/coco" GIT_TAG v1.1.0)
   FetchContent_MakeAvailable(coco)
 
   target_link_libraries(<target> cr::coco)
@@ -73,7 +73,6 @@ void not_a_coroutine()
 }
 ```
 
-
 ### `promise<T> / future<T>`
 
 A replacement for `std::promise<T>` / `std::future<T>` that allows to `co_await` the result.  
@@ -109,5 +108,28 @@ void not_a_coroutine()
     auto result = fut.get();
     // or...
     fut.then([](auto result) { ... });
+}
+```
+
+### `generator<T>`
+
+A simple generator with iterator support.  
+This generator does not support yielding another generator (i.e. no support for `ranges::elements_of`).
+
+```cpp
+coco::generator<int> generator()
+{
+    for (auto i = 0; 10 > i; ++i)
+    {
+        co_yield i;
+    }
+}
+
+void not_a_coroutine()
+{
+    for (const auto& value : generator())
+    {
+        // ...
+    }
 }
 ```
