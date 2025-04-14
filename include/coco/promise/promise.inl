@@ -23,6 +23,9 @@ namespace coco
     promise_base<T>::promise_base(promise_base &&) noexcept = default;
 
     template <typename T>
+    promise_base<T> &promise_base<T>::operator=(promise_base &&) noexcept = default;
+
+    template <typename T>
     promise_base<T>::~promise_base()
     {
         if (!m_state)
@@ -81,13 +84,19 @@ namespace coco
     }
 
     template <typename T>
-    future<T>::future(future &&) noexcept = default;
-
-    template <typename T>
     future<T>::future(std::future<T> future, std::shared_ptr<state> state)
         : m_future(std::move(future)), m_state(std::move(state))
     {
     }
+
+    template <typename T>
+    future<T>::future() = default;
+
+    template <typename T>
+    future<T>::future(future &&) noexcept = default;
+
+    template <typename T>
+    future<T> &future<T>::operator=(future &&) noexcept = default;
 
     template <typename T>
     T future<T>::get()

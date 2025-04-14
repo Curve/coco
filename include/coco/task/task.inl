@@ -15,13 +15,19 @@ namespace coco
     };
 
     template <typename T>
-    task<T>::task(task &&) noexcept = default;
-
-    template <typename T>
     task<T>::task(std::future<T> future, std::shared_ptr<state> state)
         : m_future(std::move(future)), m_state(std::move(state))
     {
     }
+
+    template <typename T>
+    task<T>::task() = default;
+
+    template <typename T>
+    task<T>::task(task &&) noexcept = default;
+
+    template <typename T>
+    task<T> &task<T>::operator=(task &&) noexcept = default;
 
     template <typename T>
     T task<T>::get()

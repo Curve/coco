@@ -12,6 +12,8 @@ namespace coco
     {
         struct state;
         struct awaiter;
+
+      private:
         struct promise_base;
 
       public:
@@ -21,9 +23,15 @@ namespace coco
         std::future<T> m_future;
         std::shared_ptr<state> m_state;
 
+      private:
+        task(std::future<T>, std::shared_ptr<state>);
+
+      public:
+        task();
+
       public:
         task(task &&) noexcept;
-        task(std::future<T>, std::shared_ptr<state>);
+        task &operator=(task &&) noexcept;
 
       public:
         [[nodiscard]] T get();

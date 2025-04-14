@@ -24,7 +24,10 @@ namespace coco
 
       public:
         promise_base();
+
+      public:
         promise_base(promise_base &&) noexcept;
+        promise_base &operator=(promise_base &&) noexcept;
 
       public:
         ~promise_base();
@@ -54,6 +57,10 @@ namespace coco
     template <typename T>
     class future
     {
+        template <typename>
+        friend struct promise_base;
+
+      private:
         struct awaiter;
 
       private:
@@ -63,9 +70,15 @@ namespace coco
         std::future<T> m_future;
         std::shared_ptr<state> m_state;
 
+      private:
+        future(std::future<T>, std::shared_ptr<state>);
+
+      public:
+        future();
+
       public:
         future(future &&) noexcept;
-        future(std::future<T>, std::shared_ptr<state>);
+        future &operator=(future &&) noexcept;
 
       public:
         [[nodiscard]] T get();
