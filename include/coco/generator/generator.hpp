@@ -3,6 +3,7 @@
 #include <coroutine>
 
 #include <variant>
+#include <optional>
 #include <exception>
 
 #include <ranges>
@@ -38,6 +39,20 @@ namespace coco
       public:
         [[nodiscard]] iterator begin();
         [[nodiscard]] sentinel end() const;
+
+      public:
+        template <typename Pred>
+            requires std::same_as<std::invoke_result_t<Pred, T>, bool>
+        std::optional<T> find_if(const Pred &) &&;
+
+      public:
+        template <typename U>
+            requires std::equality_comparable_with<T, U>
+        std::optional<T> find(const U &) &&;
+
+        template <typename U>
+            requires std::equality_comparable_with<T, U>
+        std::optional<T> skip(const U &) &&;
     };
 
     template <typename T>

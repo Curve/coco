@@ -3,6 +3,7 @@
 #include "generator.hpp"
 
 #include <utility>
+#include <algorithm>
 
 namespace coco
 {
@@ -49,6 +50,37 @@ namespace coco
     generator<T>::sentinel generator<T>::end() const
     {
         return {};
+    }
+
+    template <typename T>
+    template <typename Pred>
+        requires std::same_as<std::invoke_result_t<Pred, T>, bool>
+    std::optional<T> generator<T>::find_if(const Pred &pred) &&
+    {
+        auto it = std::ranges::find_if(*this, pred);
+
+        if (it == end())
+        {
+            return std::nullopt;
+        }
+
+        return std::move(*it);
+    }
+
+    template <typename T>
+    template <typename U>
+        requires std::equality_comparable_with<T, U>
+    std::optional<T> generator<T>::find(const U &value) &&
+    {
+        return std::move(*this).find_if([&](auto &&other) { return value == other; });
+    }
+
+    template <typename T>
+    template <typename U>
+        requires std::equality_comparable_with<T, U>
+    std::optional<T> generator<T>::skip(const U &value) &&
+    {
+        return std::move(*this).find_if([&](auto &&other) { return value != other; });
     }
 
     template <typename T>

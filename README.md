@@ -114,7 +114,8 @@ void not_a_coroutine()
 ### `generator<T>`
 
 A simple generator with iterator support.  
-This generator does not support yielding another generator (i.e. no support for `ranges::elements_of`).
+This generator does not support yielding another generator (i.e. no support for `ranges::elements_of`).  
+Convenience member functions such as `find_if`, `find` and `skip` are also provided.
 
 ```cpp
 coco::generator<int> generator()

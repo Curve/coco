@@ -39,4 +39,20 @@ suite<"generator"> generator_test = []
 
         expect(eq(sum, 20));
     };
+
+    "find"_test = []
+    {
+        auto num = generate().find(5);
+
+        expect(num.has_value());
+        expect(eq(num.value(), 5));
+    };
+
+    "skip"_test = []
+    {
+        auto num = generate().skip(0);
+
+        expect(num.has_value());
+        expect(eq(num.value(), 1));
+    };
 };
