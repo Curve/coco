@@ -2,6 +2,7 @@
 
 #include "promise.hpp"
 
+#include <atomic>
 #include <utility>
 #include <functional>
 
@@ -10,8 +11,7 @@ namespace coco
     template <typename T>
     struct promise_base<T>::state
     {
-        std::mutex mutex;
-        std::coroutine_handle<> handle;
+        std::atomic<std::coroutine_handle<>> handle;
     };
 
     template <typename T>
@@ -33,28 +33,27 @@ namespace coco
             return;
         }
 
-        std::lock_guard guard{m_state->mutex};
+        auto handle = m_state->handle.load();
 
-        if (!m_state->handle)
+        if (!handle)
         {
             return;
         }
 
-        m_state->handle.destroy();
+        handle.destroy();
     }
 
     template <typename T>
     void promise_base<T>::resume()
     {
-        std::lock_guard guard{m_state->mutex};
+        auto handle = m_state->handle.exchange({});
 
-        if (!m_state->handle)
+        if (!handle)
         {
             return;
         }
 
-        m_state->handle.resume();
-        m_state->handle = {};
+        handle.resume();
     }
 
     template <typename T>
@@ -136,9 +135,7 @@ namespace coco
     template <typename T>
     bool future<T>::awaiter::await_suspend(std::coroutine_handle<> handle) noexcept
     {
-        auto lock       = std::lock_guard{m_state->mutex};
-        m_state->handle = handle;
-
+        m_state->handle.store(handle);
         return !await_ready();
     }
 
