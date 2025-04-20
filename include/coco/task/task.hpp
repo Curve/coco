@@ -18,6 +18,7 @@ namespace coco
 
       public:
         struct promise_type;
+        struct idle;
 
       private:
         std::future<T> m_future;
@@ -98,10 +99,20 @@ namespace coco
 
       public:
         [[nodiscard]] bool await_ready() noexcept;
-        [[nodiscard]] bool await_suspend(std::coroutine_handle<>) noexcept;
+        [[nodiscard]] std::coroutine_handle<> await_suspend(std::coroutine_handle<>) noexcept;
 
       public:
         [[nodiscard]] T await_resume() noexcept;
+    };
+
+    template <typename T>
+    struct task<T>::idle
+    {
+        [[nodiscard]] static bool await_ready() noexcept;
+        static void await_suspend(std::coroutine_handle<promise_type>) noexcept;
+
+      public:
+        static void await_resume() noexcept;
     };
 } // namespace coco
 

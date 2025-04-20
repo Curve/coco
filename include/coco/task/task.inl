@@ -11,6 +11,9 @@ namespace coco
     struct task<T>::state
     {
         std::mutex mutex;
+
+      public:
+        std::coroutine_handle<> idle;
         std::coroutine_handle<> continuation;
     };
 
@@ -133,17 +136,46 @@ namespace coco
     }
 
     template <typename T>
-    bool task<T>::awaiter::await_suspend(std::coroutine_handle<> handle) noexcept
+    std::coroutine_handle<> task<T>::awaiter::await_suspend(std::coroutine_handle<> handle) noexcept
     {
         auto lock             = std::lock_guard{m_state->mutex};
         m_state->continuation = handle;
 
-        return !await_ready();
+        if (m_state->idle)
+        {
+            return m_state->idle;
+        }
+
+        if (await_ready())
+        {
+            return handle;
+        }
+
+        return std::noop_coroutine();
     }
 
     template <typename T>
     T task<T>::awaiter::await_resume() noexcept
     {
         return m_future.get();
+    }
+
+    template <typename T>
+    bool task<T>::idle::await_ready() noexcept
+    {
+        return false;
+    }
+
+    template <typename T>
+    void task<T>::idle::await_suspend(std::coroutine_handle<promise_type> handle) noexcept
+    {
+        auto state  = handle.promise().m_state;
+        auto guard  = std::lock_guard{state->mutex};
+        state->idle = handle;
+    }
+
+    template <typename T>
+    void task<T>::idle::await_resume() noexcept
+    {
     }
 } // namespace coco

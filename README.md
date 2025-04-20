@@ -15,7 +15,7 @@ _Coco_ is a C++20 coroutine library that aims to be convenient and simple to use
   ```cmake
   CPMFindPackage(
     NAME           coco
-    VERSION        1.1.0
+    VERSION        1.4.0
     GIT_REPOSITORY "https://github.com/Curve/coco"
   )
   ```
@@ -24,7 +24,7 @@ _Coco_ is a C++20 coroutine library that aims to be convenient and simple to use
   ```cmake
   include(FetchContent)
 
-  FetchContent_Declare(coco GIT_REPOSITORY "https://github.com/Curve/coco" GIT_TAG v1.1.0)
+  FetchContent_Declare(coco GIT_REPOSITORY "https://github.com/Curve/coco" GIT_TAG v1.4.0)
   FetchContent_MakeAvailable(coco)
 
   target_link_libraries(<target> cr::coco)
@@ -49,7 +49,8 @@ coco::basic_task basic()
 This coroutine is evaluated eagerly and returns a result of type `T`.  
 Similar to the `basic_task`, the result of this coroutine can be retrieved synchronously and can also be `co_await`'ed.
 
-A convenience member function `then` is also provided.
+A convenience member function `then` is also provided.  
+It is also possible to suspend the task until it is awaited (i.e. make it lazy evaluated) by calling `co_await task<T>::idle{};` from within it.
 
 ```cpp
 coco::task<int> task()
@@ -58,9 +59,16 @@ coco::task<int> task()
     co_return 10;
 }
 
+coco::task<int> task_lazy()
+{
+    co_await coco::task<int>::idle{};
+    co_return 10;
+}
+
 coco::basic_task basic()
 {
-    auto result = co_await task();
+    auto result      = co_await task();
+    auto lazy_result = co_await task_lazy();
     // ...
 }
 
