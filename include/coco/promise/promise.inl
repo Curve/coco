@@ -127,6 +127,12 @@ namespace coco
     }
 
     template <typename T>
+    future<T>::operator const std::future<T> &() &
+    {
+        return m_future;
+    }
+
+    template <typename T>
     bool future<T>::awaiter::await_ready() const noexcept
     {
         return m_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready;

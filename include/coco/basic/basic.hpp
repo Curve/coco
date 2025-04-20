@@ -17,6 +17,9 @@ namespace coco
 
       public:
         void get();
+
+      public:
+        [[nodiscard]] operator const std::future<void> &() &;
     };
 
     struct basic_task::promise_type

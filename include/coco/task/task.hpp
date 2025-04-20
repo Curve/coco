@@ -43,6 +43,7 @@ namespace coco
 
       public:
         [[nodiscard]] awaiter operator co_await() &&;
+        [[nodiscard]] operator const std::future<T> &() &;
     };
 
     template <typename T>

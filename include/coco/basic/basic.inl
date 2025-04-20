@@ -11,6 +11,11 @@ namespace coco
         return m_future.get();
     }
 
+    inline basic_task::operator const std::future<void> &() &
+    {
+        return m_future;
+    }
+
     inline basic_task basic_task::promise_type::get_return_object()
     {
         return {m_promise.get_future()};

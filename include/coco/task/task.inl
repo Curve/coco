@@ -62,6 +62,12 @@ namespace coco
     }
 
     template <typename T>
+    task<T>::operator const std::future<T> &() &
+    {
+        return m_future;
+    }
+
+    template <typename T>
     task<T> task<T>::promise_base::get_return_object()
     {
         m_state = std::make_shared<state>();
