@@ -48,6 +48,9 @@ coco::stray basic()
 This coroutine is evaluated eagerly and returns a result of type `T`.  
 It is also possible to suspend the task until it is awaited (i.e. make it lazy evaluated) by calling `co_await task<T>::wake_on_await{};` from within it.
 
+> [!WARNING]
+> When using `co_await task<T>::wake_on_await` it is the users responsibility to ensure that the coroutine is actually awaited, otherwise the coroutine may never resume and thus leak memory.
+
 ```cpp
 coco::task<int> task()
 {
@@ -142,10 +145,11 @@ Convenience functions for awaitable objects.
 
 ```cpp
 task<int> some_task();
+task<int> some_lazy_task();
 
 void not_a_coroutine()
 {
-    coco::forget(some_task());                      // Safely discard a `task<T>`
+    coco::forget(some_lazy_task());                 // Discard a lazy `task<T>`
     auto result = coco::await(some_task());         // Synchronously await any awaitable
     coco::then(some_task(), [](int) { /* ... */ }); // Invoke callback when awaitable is resolved
 }
