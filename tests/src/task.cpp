@@ -2,6 +2,7 @@
 
 #include <boost/ut.hpp>
 #include <coco/task/task.hpp>
+#include <coco/sync/sync.hpp>
 
 using namespace boost::ut;
 using namespace coco::tests;
@@ -9,85 +10,80 @@ using namespace coco::tests;
 // NOLINTNEXTLINE
 suite<"task"> task_test = []
 {
+    static auto compute = []() -> coco::task<int>
+    {
+        co_await co_sleep{std::chrono::milliseconds{500}};
+        co_return 10;
+    };
+
+    static auto await = [](std::promise<int> promise) -> coco::stray
+    {
+        auto result = co_await compute();
+        promise.set_value(result + 10);
+    };
+
+    "discard"_test = []
+    {
+        compute();
+    };
+
+    "get"_test = []
+    {
+        expect(eq(coco::await(compute()), 10));
+    };
+
+    "co_await"_test = []
+    {
+        auto promise = std::promise<int>{};
+        auto future  = promise.get_future();
+
+        await(std::move(promise));
+
+        expect(future.get() == 20);
+    };
+
+    "then"_test = []
+    {
+        auto promise = std::promise<int>{};
+        auto future  = promise.get_future();
+
+        coco::then(compute(),
+                   [promise = std::move(promise)](auto result) mutable
+                   {
+                       expect(eq(result, 10));
+                       promise.set_value(result);
+                   });
+
+        expect(eq(future.get(), 10));
+    };
+
+    static auto eager = [](bool &flag) -> coco::task<void> // NOLINT(*-coroutine-parameters)
+    {
+        flag = true;
+        co_return;
+    };
+
     "eager"_test = []
     {
-        static auto compute = []() -> coco::task<int>
-        {
-            co_await co_sleep{std::chrono::milliseconds{500}};
-            co_return 10;
-        };
+        auto result = false;
+        auto task   = eager(result);
 
-        static auto await = [](std::promise<int> promise) -> coco::basic_task
-        {
-            auto result = co_await compute();
-            promise.set_value(result + 10);
-        };
+        expect(eq(result, true));
+    };
 
-        "eager"_test = []
-        {
-            auto task = compute();
-
-            const auto &future = static_cast<const std::future<int> &>(task);
-            auto status        = future.wait_for(std::chrono::seconds(1));
-
-            expect(status == std::future_status::ready);
-            expect(eq(task.get(), 10));
-        };
-
-        "get"_test = []
-        {
-            expect(eq(compute().get(), 10));
-        };
-
-        "co_await"_test = []
-        {
-            auto promise = std::promise<int>{};
-            auto future  = promise.get_future();
-
-            await(std::move(promise)).get();
-
-            expect(future.wait_for(std::chrono::seconds(0)) == std::future_status::ready);
-            expect(future.get() == 20);
-        };
-
-        "then"_test = []
-        {
-            auto promise = std::promise<int>{};
-            auto future  = promise.get_future();
-
-            compute().then(
-                [promise = std::move(promise)](auto result) mutable
-                {
-                    expect(eq(result, 10));
-                    promise.set_value(result);
-                });
-
-            expect(eq(future.get(), 10));
-        };
+    static auto lazy = [](bool &flag) -> coco::task<void> // NOLINT(*-coroutine-parameters)
+    {
+        co_await coco::task<void>::wake_on_await{};
+        flag = true;
     };
 
     "lazy"_test = []
     {
-        static auto compute = []() -> coco::task<int>
-        {
-            co_await coco::task<int>::idle{};
-            co_return 10;
-        };
+        auto result = false;
+        auto task   = lazy(result);
 
-        static auto await = [](coco::task<int> &awaitable) -> coco::task<int>
-        {
-            co_return co_await std::move(awaitable);
-        };
-
-        "not-eager"_test = []
-        {
-            auto task = compute();
-
-            const auto &future = static_cast<const std::future<int> &>(task);
-            auto status        = future.wait_for(std::chrono::seconds(1));
-
-            expect(status != std::future_status::ready);
-            expect(eq(await(task).get(), 10));
-        };
+        expect(eq(result, false));
+        coco::await(std::move(task));
+        expect(eq(result, true));
     };
 };

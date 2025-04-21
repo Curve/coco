@@ -1,31 +1,44 @@
 #pragma once
 
-#include "../basic/basic.hpp"
+#include "../handle/handle.hpp"
 
-#include <future>
-#include <coroutine>
+#include <cstdint>
+#include <exception>
+
+#include <atomic>
+#include <variant>
 
 namespace coco
 {
-    template <typename T>
-    class [[nodiscard]] task
+    namespace impl
     {
-        struct state;
-        struct awaiter;
+        enum type : std::uint8_t
+        {
+            none   = 0,
+            result = 1,
+            error  = 2,
+        };
 
-      private:
+        struct empty
+        {
+        };
+    } // namespace impl
+
+    template <typename T>
+    class task
+    {
+        struct awaiter;
         struct promise_base;
 
       public:
         struct promise_type;
-        struct idle;
+        struct wake_on_await;
 
       private:
-        std::future<T> m_future;
-        std::shared_ptr<state> m_state;
+        handle<promise_base> m_handle;
 
       private:
-        task(std::future<T>, std::shared_ptr<state>);
+        task(handle<promise_base>);
 
       public:
         task();
@@ -35,15 +48,10 @@ namespace coco
         task &operator=(task &&) noexcept;
 
       public:
-        [[nodiscard]] T get();
+        ~task();
 
       public:
-        template <typename Callback>
-        basic_task then(Callback) &&;
-
-      public:
-        [[nodiscard]] awaiter operator co_await() &&;
-        [[nodiscard]] operator const std::future<T> &() &;
+        [[nodiscard]] awaiter operator co_await();
     };
 
     template <typename T>
@@ -52,8 +60,18 @@ namespace coco
         struct final_awaiter;
 
       public:
-        std::promise<T> m_promise;
-        std::shared_ptr<state> m_state;
+        using result = std::conditional_t<std::is_void_v<T>, impl::empty, T>;
+
+      public:
+        std::atomic<bool> has_task{true};
+
+      public:
+        std::atomic<bool> ready;
+        std::variant<std::monostate, result, std::exception_ptr> value;
+
+      public:
+        std::atomic<std::coroutine_handle<>> wake;
+        std::atomic<std::coroutine_handle<>> continuation;
 
       public:
         [[nodiscard]] task<T> get_return_object();
@@ -64,6 +82,9 @@ namespace coco
 
       public:
         void unhandled_exception();
+
+      public:
+        static void abandon(handle<promise_base>);
     };
 
     template <>
@@ -81,8 +102,7 @@ namespace coco
     template <typename T>
     struct task<T>::promise_base::final_awaiter
     {
-        std::coroutine_handle<> m_handle;
-        std::shared_ptr<state> m_state;
+        handle<promise_base> m_handle;
 
       public:
         [[nodiscard]] bool await_ready() noexcept;
@@ -93,10 +113,19 @@ namespace coco
     };
 
     template <typename T>
+    struct task<T>::wake_on_await
+    {
+        [[nodiscard]] static bool await_ready() noexcept;
+        [[nodiscard]] bool await_suspend(std::coroutine_handle<promise_type>) noexcept;
+
+      public:
+        static void await_resume() noexcept;
+    };
+
+    template <typename T>
     struct task<T>::awaiter
     {
-        std::future<T> m_future;
-        std::shared_ptr<state> m_state;
+        handle<promise_base> m_handle;
 
       public:
         [[nodiscard]] bool await_ready() noexcept;
@@ -104,16 +133,9 @@ namespace coco
 
       public:
         [[nodiscard]] T await_resume() noexcept;
-    };
-
-    template <typename T>
-    struct task<T>::idle
-    {
-        [[nodiscard]] static bool await_ready() noexcept;
-        static void await_suspend(std::coroutine_handle<promise_type>) noexcept;
 
       public:
-        static void await_resume() noexcept;
+        ~awaiter();
     };
 } // namespace coco
 

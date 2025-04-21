@@ -15,7 +15,7 @@ _Coco_ is a C++20 coroutine library that aims to be convenient and simple to use
   ```cmake
   CPMFindPackage(
     NAME           coco
-    VERSION        1.4.0
+    VERSION        2.0.0
     GIT_REPOSITORY "https://github.com/Curve/coco"
   )
   ```
@@ -24,7 +24,7 @@ _Coco_ is a C++20 coroutine library that aims to be convenient and simple to use
   ```cmake
   include(FetchContent)
 
-  FetchContent_Declare(coco GIT_REPOSITORY "https://github.com/Curve/coco" GIT_TAG v1.4.0)
+  FetchContent_Declare(coco GIT_REPOSITORY "https://github.com/Curve/coco" GIT_TAG v2.0.0)
   FetchContent_MakeAvailable(coco)
 
   target_link_libraries(<target> cr::coco)
@@ -32,13 +32,12 @@ _Coco_ is a C++20 coroutine library that aims to be convenient and simple to use
 
 ## 📋 Documentation
 
-### `basic_task`
+### `stray`
 
 A simple coroutine primitive. This coroutine is evaluated eagerly and does not return anything.  
-The coroutine can be synchronously awaited using it's member function `get`, but cannot be `co_await`'ed.
 
 ```cpp
-coco::basic_task basic()
+coco::stray basic()
 {
     co_await something();
 }
@@ -47,10 +46,7 @@ coco::basic_task basic()
 ### `task<T>`
 
 This coroutine is evaluated eagerly and returns a result of type `T`.  
-Similar to the `basic_task`, the result of this coroutine can be retrieved synchronously and can also be `co_await`'ed.
-
-A convenience member function `then` is also provided.  
-It is also possible to suspend the task until it is awaited (i.e. make it lazy evaluated) by calling `co_await task<T>::idle{};` from within it.
+It is also possible to suspend the task until it is awaited (i.e. make it lazy evaluated) by calling `co_await task<T>::wake_on_await{};` from within it.
 
 ```cpp
 coco::task<int> task()
@@ -61,11 +57,11 @@ coco::task<int> task()
 
 coco::task<int> task_lazy()
 {
-    co_await coco::task<int>::idle{};
+    co_await coco::task<int>::wake_on_await{};
     co_return 10;
 }
 
-coco::basic_task basic()
+coco::stray basic()
 {
     auto result      = co_await task();
     auto lazy_result = co_await task_lazy();
@@ -74,17 +70,15 @@ coco::basic_task basic()
 
 void not_a_coroutine()
 {
-    auto t      = task();
-    auto result = t.get();
+    auto result = coco::await(task());
     // or...
-    t.then([](auto result) { ... });
+    coco::then(task(), [](int result) { /* ... */ });
 }
 ```
 
 ### `promise<T> / future<T>`
 
 A replacement for `std::promise<T>` / `std::future<T>` that allows to `co_await` the result.  
-Convenience member functions such as `then` and `get` are also provided.
 
 ```cpp
 coco::future<int> compute()
@@ -104,7 +98,7 @@ coco::future<int> compute()
     return future;
 }
 
-coco::basic_task basic()
+coco::stray basic()
 {
     auto result = co_await compute();
     // ...
@@ -112,10 +106,9 @@ coco::basic_task basic()
 
 void not_a_coroutine()
 {
-    auto fut    = compute();
-    auto result = fut.get();
+    auto result = coco::await(compute());
     // or...
-    fut.then([](auto result) { ... });
+    coco::then(compute(), [](int result) { /* ... */ });
 }
 ```
 
@@ -140,5 +133,20 @@ void not_a_coroutine()
     {
         // ...
     }
+}
+```
+
+### `forget` / `await` / `then`
+
+Convenience functions for awaitable objects.
+
+```cpp
+task<int> some_task();
+
+void not_a_coroutine()
+{
+    coco::forget(some_task());                      // Safely discard a `task<T>`
+    auto result = coco::await(some_task());         // Synchronously await any awaitable
+    coco::then(some_task(), [](int) { /* ... */ }); // Invoke callback when awaitable is resolved
 }
 ```

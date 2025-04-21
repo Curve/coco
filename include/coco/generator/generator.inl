@@ -2,31 +2,20 @@
 
 #include "generator.hpp"
 
-#include <utility>
 #include <algorithm>
 
 namespace coco
 {
     template <typename T>
-    generator<T>::generator(handle handle) : m_handle(handle)
+    generator<T>::generator(handle<promise_type> handle) : m_handle(handle)
     {
     }
 
     template <typename T>
-    generator<T>::generator(generator &&other) noexcept : m_handle(std::exchange(other.m_handle, nullptr))
-    {
-    }
+    generator<T>::generator(generator &&other) noexcept = default;
 
     template <typename T>
-    generator<T> &generator<T>::operator=(generator &&other) noexcept
-    {
-        if (this != &other)
-        {
-            m_handle = std::exchange(other.m_handle, nullptr);
-        }
-
-        return *this;
-    }
+    generator<T> &generator<T>::operator=(generator &&other) noexcept = default;
 
     template <typename T>
     generator<T>::~generator()
@@ -87,21 +76,19 @@ namespace coco
     generator<T>::iterator::iterator() = default;
 
     template <typename T>
-    generator<T>::iterator::iterator(handle handle) : m_handle(handle)
+    generator<T>::iterator::iterator(handle<promise_type> handle) : m_handle(handle)
     {
     }
 
     template <typename T>
     T &generator<T>::iterator::operator*() const
     {
-        auto &value = m_handle.promise().m_value;
-
-        if (std::holds_alternative<T>(value))
+        if (std::holds_alternative<T>(m_handle->value))
         {
-            return std::get<T>(value);
+            return std::get<T>(m_handle->value);
         }
 
-        std::rethrow_exception(std::get<std::exception_ptr>(value));
+        std::rethrow_exception(std::get<std::exception_ptr>(m_handle->value));
     }
 
     template <typename T>
@@ -126,7 +113,7 @@ namespace coco
     template <typename T>
     generator<T> generator<T>::promise_type::get_return_object()
     {
-        return {handle::from_promise(*this)};
+        return {handle<promise_type>::from(this)};
     }
 
     template <typename T>
@@ -144,9 +131,9 @@ namespace coco
     template <typename T>
     template <typename U>
         requires std::constructible_from<T, U>
-    std::suspend_always generator<T>::promise_type::yield_value(U &&value)
+    std::suspend_always generator<T>::promise_type::yield_value(U &&val)
     {
-        m_value.template emplace<T>(std::forward<U>(value));
+        value.template emplace<T>(std::forward<U>(val));
         return {};
     }
 
@@ -158,6 +145,6 @@ namespace coco
     template <typename T>
     void generator<T>::promise_type::unhandled_exception()
     {
-        m_value.template emplace<std::exception_ptr>(std::current_exception());
+        value.template emplace<std::exception_ptr>(std::current_exception());
     }
 } // namespace coco

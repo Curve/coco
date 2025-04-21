@@ -1,6 +1,6 @@
 #pragma once
 
-#include <coroutine>
+#include "../handle/handle.hpp"
 
 #include <variant>
 #include <exception>
@@ -23,13 +23,10 @@ namespace coco
         struct promise_type;
 
       private:
-        using handle = std::coroutine_handle<promise_type>;
-
-      private:
-        handle m_handle;
+        handle<promise_type> m_handle;
 
       public:
-        generator(handle);
+        generator(handle<promise_type>);
 
       public:
         generator(generator &&) noexcept;
@@ -65,11 +62,11 @@ namespace coco
         using value_type        = T;
 
       private:
-        handle m_handle;
+        handle<promise_type> m_handle;
 
       public:
         iterator();
-        iterator(handle);
+        iterator(handle<promise_type>);
 
       public:
         [[nodiscard]] T &operator*() const;
@@ -90,7 +87,7 @@ namespace coco
     template <typename T>
     struct generator<T>::promise_type
     {
-        std::variant<std::monostate, T, std::exception_ptr> m_value;
+        std::variant<std::monostate, T, std::exception_ptr> value;
 
       public:
         [[nodiscard]] generator get_return_object();

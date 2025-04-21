@@ -2,6 +2,7 @@
 
 #include <boost/ut.hpp>
 #include <coco/task/task.hpp>
+#include <coco/sync/sync.hpp>
 #include <coco/promise/promise.hpp>
 
 using namespace boost::ut;
@@ -33,12 +34,12 @@ suite<"promise"> promise_test = []
 
     "get"_test = []
     {
-        expect(eq(compute().get(), 10));
+        expect(eq(coco::await(compute()), 10));
     };
 
     "co_await"_test = []
     {
-        expect(eq(await().get(), 20));
+        expect(eq(coco::await(await()), 20));
     };
 
     "then"_test = []
@@ -46,12 +47,12 @@ suite<"promise"> promise_test = []
         auto promise = std::promise<int>{};
         auto future  = promise.get_future();
 
-        compute().then(
-            [promise = std::move(promise)](auto result) mutable
-            {
-                expect(eq(result, 10));
-                promise.set_value(result);
-            });
+        coco::then(compute(),
+                   [promise = std::move(promise)](auto result) mutable
+                   {
+                       expect(eq(result, 10));
+                       promise.set_value(result);
+                   });
 
         expect(eq(future.get(), 10));
     };

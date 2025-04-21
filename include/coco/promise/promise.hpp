@@ -1,8 +1,9 @@
 #pragma once
 
-#include "../basic/basic.hpp"
+#include <coroutine>
 
 #include <memory>
+#include <future>
 
 namespace coco
 {
@@ -81,15 +82,7 @@ namespace coco
         future &operator=(future &&) noexcept;
 
       public:
-        [[nodiscard]] T get();
-
-      public:
-        template <typename Callback>
-        basic_task then(Callback) &&;
-
-      public:
         [[nodiscard]] awaiter operator co_await() &&;
-        [[nodiscard]] operator const std::future<T> &() &;
     };
 
     template <typename T>
@@ -103,7 +96,7 @@ namespace coco
 
       public:
         [[nodiscard]] bool await_ready() const noexcept;
-        [[nodiscard]] bool await_suspend(std::coroutine_handle<>) noexcept;
+        void await_suspend(std::coroutine_handle<>) noexcept;
 
       public:
         [[nodiscard]] T await_resume();

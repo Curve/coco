@@ -4,7 +4,6 @@
 
 #include <atomic>
 #include <utility>
-#include <functional>
 
 namespace coco
 {
@@ -33,7 +32,7 @@ namespace coco
             return;
         }
 
-        auto handle = m_state->handle.load();
+        auto handle = m_state->handle.load(std::memory_order_acquire);
 
         if (!handle)
         {
@@ -46,7 +45,7 @@ namespace coco
     template <typename T>
     void promise_base<T>::resume()
     {
-        auto handle = m_state->handle.exchange({});
+        auto handle = m_state->handle.exchange({}, std::memory_order_acq_rel);
 
         if (!handle)
         {
@@ -98,38 +97,9 @@ namespace coco
     future<T> &future<T>::operator=(future &&) noexcept = default;
 
     template <typename T>
-    T future<T>::get()
-    {
-        return m_future.get();
-    }
-
-    template <typename T>
-    template <typename Callback>
-    basic_task future<T>::then(Callback callback) &&
-    {
-        auto self = std::move(*this);
-
-        if constexpr (std::is_void_v<T>)
-        {
-            co_await std::move(self);
-            std::invoke(callback);
-        }
-        else
-        {
-            std::invoke(callback, co_await std::move(self));
-        }
-    }
-
-    template <typename T>
     future<T>::awaiter future<T>::operator co_await() &&
     {
         return {std::move(m_future), std::move(m_state)};
-    }
-
-    template <typename T>
-    future<T>::operator const std::future<T> &() &
-    {
-        return m_future;
     }
 
     template <typename T>
@@ -139,10 +109,9 @@ namespace coco
     }
 
     template <typename T>
-    bool future<T>::awaiter::await_suspend(std::coroutine_handle<> handle) noexcept
+    void future<T>::awaiter::await_suspend(std::coroutine_handle<> handle) noexcept
     {
-        m_state->handle.store(handle);
-        return !await_ready();
+        m_state->handle.store(handle, std::memory_order_release);
     }
 
     template <typename T>
