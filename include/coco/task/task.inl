@@ -165,7 +165,7 @@ namespace coco
 
         if constexpr (!std::is_void_v<T>)
         {
-            return std::get<impl::type::result>(m_handle->value);
+            return std::move(std::get<impl::type::result>(m_handle->value));
         }
     }
 
