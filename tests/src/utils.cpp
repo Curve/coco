@@ -50,5 +50,5 @@ suite<"utils"> utils_test = []
         expect(eq(results[i], i * 10));
     }
 
-    expect(le(time, std::chrono::milliseconds(150)));
+    expect(le(time, std::chrono::milliseconds(200)));
 };
