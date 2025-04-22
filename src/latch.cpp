@@ -17,12 +17,12 @@ namespace coco
             return;
         }
 
-        for (const auto &handle : handles)
+        auto waiting = std::move(handles);
+
+        for (const auto &handle : waiting)
         {
             handle.resume();
         }
-
-        handles.clear();
     }
 
     latch::awaiter latch::operator co_await()
