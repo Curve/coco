@@ -20,24 +20,29 @@ suite<"utils"> utils_test = []
         co_return ms.count();
     };
 
-    auto t1 = compute(std::chrono::milliseconds{100});
-    auto t2 = compute(std::chrono::milliseconds{200});
+    auto t1 = compute(std::chrono::milliseconds{150});
+    auto t2 = compute(std::chrono::milliseconds{100});
+    auto t3 = compute(std::chrono::milliseconds{50});
 
-    auto then     = clock::now();
-    auto [r1, r2] = coco::await(coco::when_all(std::move(t1), std::move(t2)));
-    auto time     = clock::now() - then;
+    auto then         = clock::now();
+    auto [r1, r2, r3] = coco::await(coco::when_all(std::move(t1), std::move(t2), std::move(t3)));
+    auto time         = clock::now() - then;
 
-    expect(eq(r1, 100));
-    expect(eq(r2, 200));
+    expect(eq(r1, 150));
+    expect(eq(r2, 100));
+    expect(eq(r3, 50));
 
-    expect(le(time, std::chrono::milliseconds(250)));
+    expect(le(time, std::chrono::milliseconds(200)));
 
-    auto awaitables = std::views::iota(0, 10) //
-                      | std::views::transform([](auto i) { return compute(std::chrono::milliseconds{i * 10}); });
-    auto awaitables_vec = std::vector<coco::task<long>>{awaitables.begin(), awaitables.end()};
+    std::vector<coco::task<long>> tasks;
+
+    for (auto i = 0; 10 > i; ++i)
+    {
+        tasks.emplace_back(compute(std::chrono::milliseconds{i * 10}));
+    }
 
     then         = clock::now();
-    auto results = coco::await(coco::when_all(std::move(awaitables_vec)));
+    auto results = coco::await(coco::when_all(std::move(tasks)));
     time         = clock::now() - then;
 
     for (auto i = 0; 10 > i; ++i)

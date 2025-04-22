@@ -19,7 +19,7 @@ namespace coco
     auto await(T &&awaitable)
     {
         // NOLINTNEXTLINE(*-coroutine-parameters)
-        static auto unpack = []<typename P, typename U>(std::promise<P> promise, U &&awaitable) mutable -> stray
+        static auto unpack = []<typename P, typename U>(std::promise<P> promise, U &&awaitable) -> stray
         {
             if constexpr (std::is_void_v<P>)
             {
@@ -43,7 +43,7 @@ namespace coco
     template <Awaitable T, typename Callback>
     auto then(T awaitable, Callback callback)
     {
-        static auto unpack = [](auto awaitable, auto callback) mutable -> stray
+        static auto unpack = [](auto awaitable, auto callback) -> stray
         {
             if constexpr (std::is_void_v<typename traits<T>::result>)
             {
@@ -77,7 +77,7 @@ namespace coco
 
         auto tuple = std::forward_as_tuple(awaitables...);
 
-        auto unpack = [&]<auto... Is>(std::integer_sequence<std::size_t, Is...>)
+        auto unpack = [&]<auto... Is>(std::index_sequence<Is...>)
         {
             (spawn(std::move(std::get<Is>(tuple)), std::integral_constant<std::size_t, Is>{}), ...);
         };

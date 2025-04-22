@@ -8,7 +8,7 @@ namespace coco
     {
         auto guard = std::lock_guard{mutex};
 
-        if (--counter)
+        if (--counter > 0)
         {
             return;
         }

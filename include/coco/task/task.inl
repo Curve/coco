@@ -13,10 +13,10 @@ namespace coco
     task<T>::task() = default;
 
     template <typename T>
-    task<T>::task(task &&other) noexcept = default;
+    task<T>::task(task &&) noexcept = default;
 
     template <typename T>
-    task<T> &task<T>::operator=(task &&other) noexcept = default;
+    task<T> &task<T>::operator=(task &&) noexcept = default;
 
     template <typename T>
     task<T>::~task()
