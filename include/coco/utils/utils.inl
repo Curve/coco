@@ -4,6 +4,7 @@
 #include "../latch/latch.hpp"
 
 #include <future>
+#include <optional>
 #include <functional>
 #include <type_traits>
 
@@ -91,12 +92,14 @@ namespace coco
     template <Awaitable T>
     task<std::vector<typename traits<T>::result>> when_all(std::vector<T> awaitables)
     {
+        using result = typename traits<T>::result;
+
         auto latch   = coco::latch{static_cast<std::ptrdiff_t>(awaitables.size())};
-        auto results = std::vector<typename traits<T>::result>(awaitables.size());
+        auto results = std::vector<std::optional<result>>(awaitables.size());
 
         auto spawn = [&](auto awaitable, auto index) -> stray
         {
-            results[index] = co_await std::move(awaitable);
+            results[index].emplace(co_await std::move(awaitable));
             latch.count_down();
         };
 
@@ -106,6 +109,14 @@ namespace coco
         }
         co_await latch;
 
-        co_return std::move(results);
+        auto rtn = std::vector<result>{};
+        rtn.reserve(results.size());
+
+        for (auto &result : results)
+        {
+            rtn.emplace_back(std::move(result.value()));
+        }
+
+        co_return std::move(rtn);
     }
 } // namespace coco
