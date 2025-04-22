@@ -30,7 +30,7 @@ namespace coco
     }
 
     template <typename T>
-    task<T>::awaiter task<T>::operator co_await()
+    task<T>::awaiter task<T>::operator co_await() &&
     {
         return awaiter{std::move(m_handle)};
     }

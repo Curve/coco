@@ -15,7 +15,7 @@ _Coco_ is a C++20 coroutine library that aims to be convenient and simple to use
   ```cmake
   CPMFindPackage(
     NAME           coco
-    VERSION        2.0.0
+    VERSION        3.0.0
     GIT_REPOSITORY "https://github.com/Curve/coco"
   )
   ```
@@ -24,7 +24,7 @@ _Coco_ is a C++20 coroutine library that aims to be convenient and simple to use
   ```cmake
   include(FetchContent)
 
-  FetchContent_Declare(coco GIT_REPOSITORY "https://github.com/Curve/coco" GIT_TAG v2.0.0)
+  FetchContent_Declare(coco GIT_REPOSITORY "https://github.com/Curve/coco" GIT_TAG v3.0.0)
   FetchContent_MakeAvailable(coco)
 
   target_link_libraries(<target> cr::coco)
@@ -139,7 +139,29 @@ void not_a_coroutine()
 }
 ```
 
-### `forget` / `await` / `then`
+### `latch`
+
+A simple latch which can be awaited.
+
+```cpp
+coco::latch latch{2};
+
+coco::stray basic()
+{
+    co_await something();
+    latch.count_down();
+}
+
+coco::stray wait()
+{
+    basic();
+    basic();
+    
+    co_await latch;    
+}
+```
+
+### `forget` / `await` / `then` / `when_all`
 
 Convenience functions for awaitable objects.
 
@@ -149,8 +171,16 @@ task<int> some_lazy_task();
 
 void not_a_coroutine()
 {
-    coco::forget(some_lazy_task());                 // Discard a lazy `task<T>`
-    auto result = coco::await(some_task());         // Synchronously await any awaitable
-    coco::then(some_task(), [](int) { /* ... */ }); // Invoke callback when awaitable is resolved
+    // Discard a lazy `task<T>`
+    coco::forget(some_lazy_task());
+    
+    // Synchronously await any awaitable
+    auto result = coco::await(some_task());
+    
+    // Invoke callback when awaitable is resolved
+    coco::then(some_task(), [](int) { /* ... */ });
+    
+    // Await multiple awaitables
+    auto [r1, r2] = coco::await(coco::when_all(some_task(), some_lazy_task()));
 }
 ```

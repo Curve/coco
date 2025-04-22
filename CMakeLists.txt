@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.25)
-project(coco LANGUAGES CXX VERSION 2.0.1)
+project(coco LANGUAGES CXX VERSION 3.0.0)
 
 # --------------------------------------------------------------------------------------------------------
 # Library options
@@ -11,19 +11,21 @@ option(coco_tests "Build tests" OFF)
 # Create library
 # --------------------------------------------------------------------------------------------------------
 
-add_library(${PROJECT_NAME} INTERFACE)
+add_library(${PROJECT_NAME} "src/latch.cpp")
 add_library(cr::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
-target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_20)
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 20 CXX_EXTENSIONS OFF CXX_STANDARD_REQUIRED ON)
 
 # --------------------------------------------------------------------------------------------------------
 # Include "include" folder
 # --------------------------------------------------------------------------------------------------------
 
+target_include_directories(${PROJECT_NAME} PRIVATE "include/coco")
+
 target_include_directories(
-  ${PROJECT_NAME} INTERFACE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-                            $<INSTALL_INTERFACE:include/${PROJECT_NAME}-${PROJECT_VERSION}>
+  ${PROJECT_NAME} PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+                         $<INSTALL_INTERFACE:include/${PROJECT_NAME}-${PROJECT_VERSION}>
 )
 
 # --------------------------------------------------------------------------------------------------------

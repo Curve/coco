@@ -2,7 +2,7 @@
 
 #include <boost/ut.hpp>
 #include <coco/task/task.hpp>
-#include <coco/sync/sync.hpp>
+#include <coco/utils/utils.hpp>
 #include <coco/promise/promise.hpp>
 
 using namespace boost::ut;

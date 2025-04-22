@@ -51,7 +51,7 @@ namespace coco
         ~task();
 
       public:
-        [[nodiscard]] awaiter operator co_await();
+        [[nodiscard]] awaiter operator co_await() &&;
     };
 
     template <typename T>
@@ -132,7 +132,7 @@ namespace coco
         [[nodiscard]] std::coroutine_handle<> await_suspend(std::coroutine_handle<>) noexcept;
 
       public:
-        [[nodiscard]] T await_resume() noexcept;
+        T await_resume() noexcept;
 
       public:
         ~awaiter();

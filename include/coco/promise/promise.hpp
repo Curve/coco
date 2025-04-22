@@ -99,7 +99,7 @@ namespace coco
         void await_suspend(std::coroutine_handle<>) noexcept;
 
       public:
-        [[nodiscard]] T await_resume();
+        T await_resume();
     };
 } // namespace coco
 
