@@ -36,7 +36,7 @@ namespace coco
         awaiter(latch *);
 
       public:
-        [[nodiscard]] bool await_ready() const;
+        [[nodiscard]] static bool await_ready();
         bool await_suspend(std::coroutine_handle<>);
 
       public:

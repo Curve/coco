@@ -1,5 +1,7 @@
 #include "latch/latch.hpp"
 
+#include <cassert>
+
 namespace coco
 {
     latch::latch(std::ptrdiff_t initial) : counter(initial) {}
@@ -8,7 +10,9 @@ namespace coco
     {
         auto guard = std::lock_guard{mutex};
 
-        if (--counter > 0)
+        assert(counter > 0);
+
+        if (--counter != 0)
         {
             return;
         }
@@ -28,17 +32,16 @@ namespace coco
 
     latch::awaiter::awaiter(latch *parent) : m_parent(parent) {}
 
-    bool latch::awaiter::await_ready() const
+    bool latch::awaiter::await_ready()
     {
-        auto guard = std::lock_guard{m_parent->mutex};
-        return m_parent->counter == 0;
+        return false;
     }
 
     bool latch::awaiter::await_suspend(std::coroutine_handle<> handle)
     {
         auto guard = std::lock_guard{m_parent->mutex};
 
-        if (!m_parent->counter)
+        if (m_parent->counter == 0)
         {
             return false;
         }
