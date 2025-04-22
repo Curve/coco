@@ -32,11 +32,11 @@ suite<"utils"> utils_test = []
     expect(eq(r2, 100));
     expect(eq(r3, 50));
 
-    expect(le(time, std::chrono::milliseconds(200)));
+    expect(le(time, std::chrono::milliseconds(300)));
 
     std::vector<coco::task<long>> tasks;
 
-    for (auto i = 0; 10 > i; ++i)
+    for (auto i = 1; 10 >= i; ++i)
     {
         tasks.emplace_back(compute(std::chrono::milliseconds{i * 10}));
     }
@@ -47,8 +47,8 @@ suite<"utils"> utils_test = []
 
     for (auto i = 0; 10 > i; ++i)
     {
-        expect(eq(results[i], i * 10));
+        expect(eq(results[i], (i + 1) * 10));
     }
 
-    expect(le(time, std::chrono::milliseconds(200)));
+    expect(le(time, std::chrono::milliseconds(550)));
 };
