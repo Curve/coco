@@ -22,5 +22,3 @@ namespace coco
         static void unhandled_exception();
     };
 } // namespace coco
-
-#include "stray.inl"

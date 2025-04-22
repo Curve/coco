@@ -11,7 +11,7 @@ option(coco_tests "Build tests" OFF)
 # Create library
 # --------------------------------------------------------------------------------------------------------
 
-add_library(${PROJECT_NAME} "src/latch.cpp")
+add_library(${PROJECT_NAME} "src/latch.cpp" "src/stray.cpp")
 add_library(cr::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
