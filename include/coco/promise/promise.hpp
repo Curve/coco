@@ -82,6 +82,9 @@ namespace coco
         future &operator=(future &&) noexcept;
 
       public:
+        [[nodiscard]] T get();
+
+      public:
         [[nodiscard]] awaiter operator co_await() &&;
     };
 

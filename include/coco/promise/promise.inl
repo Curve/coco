@@ -97,6 +97,12 @@ namespace coco
     future<T> &future<T>::operator=(future &&) noexcept = default;
 
     template <typename T>
+    T future<T>::get()
+    {
+        return m_future.get();
+    }
+
+    template <typename T>
     future<T>::awaiter future<T>::operator co_await() &&
     {
         return {std::move(m_future), std::move(m_state)};
