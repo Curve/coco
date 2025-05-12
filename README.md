@@ -15,7 +15,7 @@ _Coco_ is a C++20 coroutine library that aims to be convenient and simple to use
   ```cmake
   CPMFindPackage(
     NAME           coco
-    VERSION        3.0.0
+    VERSION        3.2.0
     GIT_REPOSITORY "https://github.com/Curve/coco"
   )
   ```
@@ -24,7 +24,7 @@ _Coco_ is a C++20 coroutine library that aims to be convenient and simple to use
   ```cmake
   include(FetchContent)
 
-  FetchContent_Declare(coco GIT_REPOSITORY "https://github.com/Curve/coco" GIT_TAG v3.0.0)
+  FetchContent_Declare(coco GIT_REPOSITORY "https://github.com/Curve/coco" GIT_TAG v3.2.0)
   FetchContent_MakeAvailable(coco)
 
   target_link_libraries(<target> cr::coco)
