@@ -2,7 +2,6 @@
 
 #include "../handle/handle.hpp"
 
-#include <cstdint>
 #include <exception>
 
 #include <atomic>
@@ -10,20 +9,6 @@
 
 namespace coco
 {
-    namespace impl
-    {
-        enum type : std::uint8_t
-        {
-            none   = 0,
-            result = 1,
-            error  = 2,
-        };
-
-        struct empty
-        {
-        };
-    } // namespace impl
-
     template <typename T>
     class task
     {
@@ -60,7 +45,7 @@ namespace coco
         struct final_awaiter;
 
       public:
-        using result = std::conditional_t<std::is_void_v<T>, impl::empty, T>;
+        using result = std::conditional_t<std::is_void_v<T>, std::monostate, T>;
 
       public:
         std::atomic<bool> has_task{true};

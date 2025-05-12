@@ -2,8 +2,20 @@
 
 #include "task.hpp"
 
+#include <cstdint>
+
 namespace coco
 {
+    namespace impl
+    {
+        enum type : std::uint8_t
+        {
+            none   = 0,
+            result = 1,
+            error  = 2,
+        };
+    }
+
     template <typename T>
     task<T>::task(handle<promise_base> handle) : m_handle(std::move(handle))
     {
@@ -95,7 +107,7 @@ namespace coco
     template <typename T>
     std::coroutine_handle<> task<T>::promise_base::final_awaiter::await_suspend(std::coroutine_handle<> handle) noexcept
     {
-        if (auto continuation = m_handle->continuation.load(std::memory_order_acquire))
+        if (auto continuation = m_handle->continuation.exchange(nullptr, std::memory_order_acq_rel))
         {
             handle = continuation;
         }
