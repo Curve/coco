@@ -20,7 +20,7 @@ namespace coco
     auto await(T &&awaitable)
     {
         // NOLINTNEXTLINE(*-coroutine-parameters)
-        static auto unpack = []<typename P, typename U>(std::promise<P> promise, U &&awaitable) -> stray
+        static auto spawn_stray = []<typename P, typename U>(std::promise<P> promise, U &&awaitable) -> stray
         {
             if constexpr (std::is_void_v<P>)
             {
@@ -36,7 +36,7 @@ namespace coco
         auto promise = std::promise<typename traits<T>::result>{};
         auto fut     = promise.get_future();
 
-        unpack(std::move(promise), std::forward<T>(awaitable));
+        spawn_stray(std::move(promise), std::forward<T>(awaitable));
 
         return fut.get();
     }
@@ -44,7 +44,7 @@ namespace coco
     template <Awaitable T, typename Callback>
     auto then(T awaitable, Callback callback)
     {
-        static auto unpack = [](auto awaitable, auto callback) -> stray
+        static auto spawn_stray = [](auto awaitable, auto callback) -> stray
         {
             if constexpr (std::is_void_v<typename traits<T>::result>)
             {
@@ -59,7 +59,7 @@ namespace coco
             co_return;
         };
 
-        unpack(std::move(awaitable), std::move(callback));
+        spawn_stray(std::move(awaitable), std::move(callback));
     }
 
     template <Awaitable... Ts>
@@ -76,7 +76,7 @@ namespace coco
             latch.count_down();
         };
 
-        auto tuple = std::forward_as_tuple(awaitables...);
+        auto tuple = std::tuple{std::move(awaitables)...};
 
         auto unpack = [&]<auto... Is>(std::index_sequence<Is...>)
         {
