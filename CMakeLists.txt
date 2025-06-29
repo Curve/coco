@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.25)
-project(coco LANGUAGES CXX VERSION 3.2.0)
+project(coco LANGUAGES CXX VERSION 3.2.1)
 
 # --------------------------------------------------------------------------------------------------------
 # Library options
@@ -11,7 +11,7 @@ option(coco_tests "Build tests" OFF)
 # Create library
 # --------------------------------------------------------------------------------------------------------
 
-add_library(${PROJECT_NAME} "src/latch.cpp" "src/stray.cpp")
+add_library(${PROJECT_NAME} STATIC "src/latch.cpp" "src/stray.cpp")
 add_library(cr::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
