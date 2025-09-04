@@ -8,7 +8,7 @@ namespace coco
 
     void latch::count_down()
     {
-        auto guard = std::lock_guard{mutex};
+        auto guard = std::unique_lock{mutex};
 
         assert(counter > 0);
 
@@ -18,6 +18,7 @@ namespace coco
         }
 
         auto waiting = std::move(handles);
+        guard.unlock();
 
         for (const auto &handle : waiting)
         {
