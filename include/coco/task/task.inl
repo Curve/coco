@@ -168,7 +168,7 @@ namespace coco
     }
 
     template <typename T>
-    T task<T>::awaiter::await_resume() noexcept
+    T task<T>::awaiter::await_resume()
     {
         if (auto *exception = std::get_if<impl::type::error>(&m_handle->value))
         {

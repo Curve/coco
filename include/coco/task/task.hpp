@@ -117,7 +117,7 @@ namespace coco
         [[nodiscard]] std::coroutine_handle<> await_suspend(std::coroutine_handle<>) noexcept;
 
       public:
-        T await_resume() noexcept;
+        T await_resume();
 
       public:
         ~awaiter();
