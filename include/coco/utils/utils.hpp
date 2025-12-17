@@ -1,5 +1,6 @@
 #pragma once
 
+#include <span>
 #include <vector>
 
 #include "../task/task.hpp"
@@ -8,20 +9,23 @@
 
 namespace coco
 {
-    template <Awaitable T>
+    template <awaitable T>
     stray forget(T);
 
-    template <Awaitable T>
+    template <awaitable T>
     auto await(T &&);
 
-    template <Awaitable T, typename Callback>
-    auto then(T, Callback);
+    template <awaitable T, typename Resolve>
+    auto then(T, Resolve);
 
-    template <Awaitable... Ts>
+    template <awaitable T, typename Resolve, typename Reject>
+    auto then(T, Resolve, Reject);
+
+    template <awaitable... Ts>
     task<std::tuple<typename traits<Ts>::result...>> when_all(Ts...);
 
-    template <Awaitable T>
-    task<std::vector<typename traits<T>::result>> when_all(std::vector<T>);
+    template <awaitable T>
+    task<std::vector<typename traits<T>::result>> when_all(std::span<T>);
 } // namespace coco
 
 #include "utils.inl"

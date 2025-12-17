@@ -1,5 +1,7 @@
 #include "sleep.hpp"
 
+#include <latch>
+
 #include <boost/ut.hpp>
 #include <coco/task/task.hpp>
 #include <coco/utils/utils.hpp>
@@ -10,6 +12,12 @@ using namespace coco::tests;
 // NOLINTNEXTLINE
 suite<"task"> task_test = []
 {
+    static auto throwing = []() -> coco::task<int>
+    {
+        co_await co_sleep{std::chrono::milliseconds{500}};
+        throw std::runtime_error("Some exception");
+    };
+
     static auto compute = []() -> coco::task<int>
     {
         co_await co_sleep{std::chrono::milliseconds{500}};
@@ -29,6 +37,7 @@ suite<"task"> task_test = []
 
     "get"_test = []
     {
+        expect(throws<std::runtime_error>([] { coco::await(throwing()); }));
         expect(eq(coco::await(compute()), 10));
     };
 
@@ -44,17 +53,29 @@ suite<"task"> task_test = []
 
     "then"_test = []
     {
-        auto promise = std::promise<int>{};
-        auto future  = promise.get_future();
+        auto latch = std::latch{2};
 
         coco::then(compute(),
-                   [promise = std::move(promise)](auto result) mutable
+                   [&latch](auto result) mutable
                    {
                        expect(eq(result, 10));
-                       promise.set_value(result);
+                       latch.count_down();
                    });
 
-        expect(eq(future.get(), 10));
+        coco::then(
+            throwing(),
+            [&latch](auto &&...)
+            {
+                expect(false);
+                latch.count_down();
+            },
+            [&latch](auto &&...)
+            {
+                expect(true);
+                latch.count_down();
+            });
+
+        latch.wait();
     };
 
     static auto eager = [](bool &flag) -> coco::task<void> // NOLINT(*-coroutine-parameters)

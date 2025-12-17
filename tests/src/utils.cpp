@@ -1,7 +1,5 @@
 #include "sleep.hpp"
 
-#include <ranges>
-
 #include <boost/ut.hpp>
 #include <coco/task/task.hpp>
 #include <coco/utils/utils.hpp>
@@ -42,7 +40,7 @@ suite<"utils"> utils_test = []
     }
 
     then         = clock::now();
-    auto results = coco::await(coco::when_all(std::move(tasks)));
+    auto results = coco::await(coco::when_all(std::span{tasks}));
     time         = clock::now() - then;
 
     for (auto i = 0; 10 > i; ++i)

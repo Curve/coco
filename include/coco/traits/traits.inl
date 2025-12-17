@@ -21,28 +21,28 @@ namespace coco
     };
 
     template <typename T>
-        requires Awaiter<T>
+        requires awaiter<T>
     struct awaiter_of<T>
     {
         using type = T;
     };
 
     template <typename T>
-        requires Awaiter<decltype(std::declval<T>().operator co_await())>
+        requires awaiter<decltype(std::declval<T>().operator co_await())>
     struct awaiter_of<T>
     {
         using type = decltype(std::declval<T>().operator co_await());
     };
 
     template <typename T>
-        requires Awaiter<decltype(operator co_await(std::declval<T>()))>
+        requires awaiter<decltype(operator co_await(std::declval<T>()))>
     struct awaiter_of<T>
     {
         using type = decltype(operator co_await(std::declval<T>()));
     };
 
     template <typename T>
-        requires Awaitable<T>
+        requires awaitable<T>
     struct traits<T>
     {
         using awaiter = awaiter_of_t<T>;

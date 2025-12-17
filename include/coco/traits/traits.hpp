@@ -9,15 +9,15 @@ namespace coco
     struct is_coroutine_handle;
 
     template <typename T>
-    static constexpr auto is_coroutine_handle_v = is_coroutine_handle<T>::value;
+    concept coroutine_handle = is_coroutine_handle<T>::value;
 
     template <typename T>
-    concept SuspendResult = std::is_void_v<T> || std::same_as<T, bool> || is_coroutine_handle_v<T>;
+    concept suspend_result = std::is_void_v<T> || std::same_as<T, bool> || coroutine_handle<T>;
 
     template <typename T>
-    concept Awaiter = requires(T awaiter, std::coroutine_handle<> handle) {
+    concept awaiter = requires(T awaiter, std::coroutine_handle<> handle) {
         { awaiter.await_ready() } -> std::same_as<bool>;
-        { awaiter.await_suspend(handle) } -> SuspendResult;
+        { awaiter.await_suspend(handle) } -> suspend_result;
         { awaiter.await_resume() };
     };
 
@@ -28,7 +28,7 @@ namespace coco
     using awaiter_of_t = awaiter_of<T>::type;
 
     template <typename T>
-    concept Awaitable = not std::is_void_v<awaiter_of_t<T>>;
+    concept awaitable = not std::is_void_v<awaiter_of_t<T>>;
 
     template <typename T>
     struct traits;

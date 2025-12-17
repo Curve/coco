@@ -3,66 +3,103 @@
 #include "utils.hpp"
 #include "../latch/latch.hpp"
 
+#include <exception>
+#include <functional>
+
 #include <future>
 #include <optional>
-#include <functional>
+
 #include <type_traits>
+
+#ifdef __cpp_exceptions
+#define COCO_CATCH(expr, except)                                                                                            \
+    try                                                                                                                     \
+    {                                                                                                                       \
+        expr;                                                                                                               \
+    }                                                                                                                       \
+    catch (...)                                                                                                             \
+    {                                                                                                                       \
+        except;                                                                                                             \
+    }
+#else
+#define COCO_CATCH(expr, except) expr;
+#endif
 
 namespace coco
 {
-    template <Awaitable T>
+    template <awaitable T>
     stray forget(T awaitable)
     {
         co_await std::move(awaitable);
     }
 
-    template <Awaitable T>
+    template <awaitable T>
     auto await(T &&awaitable)
     {
-        // NOLINTNEXTLINE(*-coroutine-parameters)
-        static auto spawn_stray = []<typename P, typename U>(std::promise<P> promise, U &&awaitable) -> stray
-        {
-            if constexpr (std::is_void_v<P>)
-            {
-                co_await std::forward<U>(awaitable);
-                promise.set_value();
-            }
-            else
-            {
-                promise.set_value(co_await std::forward<U>(awaitable));
-            }
-        };
+        using result = traits<T>::result;
 
-        auto promise = std::promise<typename traits<T>::result>{};
+        auto promise = std::promise<result>{};
         auto fut     = promise.get_future();
 
-        spawn_stray(std::move(promise), std::forward<T>(awaitable));
-
-        return fut.get();
-    }
-
-    template <Awaitable T, typename Callback>
-    auto then(T awaitable, Callback callback)
-    {
-        static auto spawn_stray = [](auto awaitable, auto callback) -> stray
+        // NOLINTNEXTLINE(*-reference-coroutine-parameters)
+        auto spawn = []<typename U>(U &&awaitable, auto promise) -> coco::stray
         {
-            if constexpr (std::is_void_v<typename traits<T>::result>)
+            if constexpr (std::is_void_v<result>)
             {
-                co_await std::move(awaitable);
-                std::invoke(callback);
+                COCO_CATCH(
+                    {
+                        co_await std::forward<U>(awaitable);
+                        promise.set_value();
+                    },
+                    promise.set_exception(std::current_exception()));
             }
             else
             {
-                std::invoke(callback, co_await std::move(awaitable));
+                COCO_CATCH(promise.set_value(co_await std::forward<U>(awaitable)),
+                           promise.set_exception(std::current_exception()));
             }
 
             co_return;
         };
 
-        spawn_stray(std::move(awaitable), std::move(callback));
+        spawn(std::forward<T>(awaitable), std::move(promise));
+
+        return fut.get();
     }
 
-    template <Awaitable... Ts>
+    template <awaitable T, typename Resolve>
+    auto then(T awaitable, Resolve resolve)
+    {
+        then(std::move(awaitable), std::move(resolve), [](auto...) {});
+    }
+
+    template <awaitable T, typename Resolve, typename Reject>
+    auto then(T awaitable, Resolve resolve, Reject reject)
+    {
+        using result = traits<T>::result;
+
+        static auto spawn = [](auto awaitable, auto resolve, [[maybe_unused]] auto reject) -> stray
+        {
+            if constexpr (std::is_void_v<result>)
+            {
+                COCO_CATCH(
+                    {
+                        co_await std::move(awaitable);
+                        std::invoke(resolve);
+                    },
+                    std::invoke(reject, std::current_exception()));
+            }
+            else
+            {
+                COCO_CATCH(std::invoke(resolve, co_await std::move(awaitable)),
+                           std::invoke(reject, std::current_exception()));
+            }
+        };
+
+        spawn(std::move(awaitable), std::move(resolve), std::move(reject));
+    }
+
+    template <awaitable... Ts>
     task<std::tuple<typename traits<Ts>::result...>> when_all(Ts... awaitables)
     {
         static constexpr auto N = sizeof...(awaitables);
@@ -89,8 +126,8 @@ namespace coco
         co_return std::move(results);
     }
 
-    template <Awaitable T>
-    task<std::vector<typename traits<T>::result>> when_all(std::vector<T> awaitables)
+    template <awaitable T>
+    task<std::vector<typename traits<T>::result>> when_all(std::span<T> awaitables)
     {
         using result = typename traits<T>::result;
 
@@ -120,3 +157,5 @@ namespace coco
         co_return std::move(rtn);
     }
 } // namespace coco
+
+#undef COCO_CATCH
