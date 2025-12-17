@@ -16,6 +16,7 @@ suite<"task"> task_test = []
     {
         co_await co_sleep{std::chrono::milliseconds{500}};
         throw std::runtime_error("Some exception");
+        co_return -10;
     };
 
     static auto compute = []() -> coco::task<int>
