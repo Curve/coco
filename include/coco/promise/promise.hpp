@@ -98,7 +98,7 @@ namespace coco
         std::shared_ptr<state> m_state;
 
       public:
-        [[nodiscard]] bool await_ready() const noexcept;
+        bool await_ready() const noexcept; // NOLINT(*-nodiscard)
         void await_suspend(std::coroutine_handle<>) noexcept;
 
       public:

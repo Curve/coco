@@ -90,16 +90,16 @@ namespace coco
         std::variant<std::monostate, T, std::exception_ptr> value;
 
       public:
-        [[nodiscard]] generator get_return_object();
+        generator get_return_object();
 
       public:
-        [[nodiscard]] static std::suspend_always initial_suspend();
-        [[nodiscard]] static std::suspend_always final_suspend() noexcept;
+        static std::suspend_always initial_suspend();
+        static std::suspend_always final_suspend() noexcept;
 
       public:
         template <typename U>
             requires std::constructible_from<T, U>
-        [[nodiscard]] std::suspend_always yield_value(U &&);
+        std::suspend_always yield_value(U &&);
 
       public:
         void return_void();

@@ -59,11 +59,11 @@ namespace coco
         std::atomic<std::coroutine_handle<>> continuation;
 
       public:
-        [[nodiscard]] task<T> get_return_object();
+        task<T> get_return_object();
 
       public:
-        [[nodiscard]] std::suspend_never initial_suspend();
-        [[nodiscard]] final_awaiter final_suspend() noexcept;
+        std::suspend_never initial_suspend();
+        final_awaiter final_suspend() noexcept;
 
       public:
         void unhandled_exception();
@@ -90,8 +90,8 @@ namespace coco
         handle<promise_base> m_handle;
 
       public:
-        [[nodiscard]] bool await_ready() noexcept;
-        [[nodiscard]] std::coroutine_handle<> await_suspend(std::coroutine_handle<>) noexcept;
+        bool await_ready() noexcept;
+        std::coroutine_handle<> await_suspend(std::coroutine_handle<>) noexcept;
 
       public:
         void await_resume() noexcept;
@@ -100,8 +100,8 @@ namespace coco
     template <typename T>
     struct task<T>::wake_on_await
     {
-        [[nodiscard]] static bool await_ready() noexcept;
-        [[nodiscard]] bool await_suspend(std::coroutine_handle<promise_type>) noexcept;
+        static bool await_ready() noexcept;
+        bool await_suspend(std::coroutine_handle<promise_type>) noexcept;
 
       public:
         static void await_resume() noexcept;
@@ -113,8 +113,8 @@ namespace coco
         handle<promise_base> m_handle;
 
       public:
-        [[nodiscard]] bool await_ready() noexcept;
-        [[nodiscard]] std::coroutine_handle<> await_suspend(std::coroutine_handle<>) noexcept;
+        bool await_ready() noexcept;
+        std::coroutine_handle<> await_suspend(std::coroutine_handle<>) noexcept;
 
       public:
         T await_resume();

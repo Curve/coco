@@ -11,11 +11,11 @@ namespace coco
 
     struct stray::promise_type
     {
-        [[nodiscard]] static stray get_return_object();
+        static stray get_return_object();
 
       public:
-        [[nodiscard]] static std::suspend_never initial_suspend();
-        [[nodiscard]] static std::suspend_never final_suspend() noexcept;
+        static std::suspend_never initial_suspend();
+        static std::suspend_never final_suspend() noexcept;
 
       public:
         static void return_void();
