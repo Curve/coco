@@ -15,45 +15,36 @@ namespace coco
 {
     namespace impl
     {
-#ifdef __cpp_exceptions
         template <typename T, typename F, typename E>
             requires(not std::is_void_v<typename traits<T>::result>)
-        coco::stray resolve(T awaitable, F fn, E except)
+        coco::stray resolve(T awaitable, F fn, [[maybe_unused]] E except)
+#if defined(__cpp_exceptions) && !defined(COCO_NO_EXCEPTIONS)
         try
+#endif
         {
             std::invoke(fn, co_await std::forward<T>(awaitable));
         }
+#if defined(__cpp_exceptions) && !defined(COCO_NO_EXCEPTIONS)
         catch (...)
         {
             std::invoke(except, std::current_exception());
         }
+#endif
 
         template <typename T, typename F, typename E>
             requires(std::is_void_v<typename traits<T>::result>)
-        coco::stray resolve(T awaitable, F fn, E except)
+        coco::stray resolve(T awaitable, F fn, [[maybe_unused]] E except)
+#if defined(__cpp_exceptions) && !defined(COCO_NO_EXCEPTIONS)
         try
+#endif
         {
             co_await std::forward<T>(awaitable);
             std::invoke(fn);
         }
+#if defined(__cpp_exceptions) && !defined(COCO_NO_EXCEPTIONS)
         catch (...)
         {
             std::invoke(except, std::current_exception());
-        }
-#else
-        template <typename T, typename F>
-            requires(not std::is_void_v<typename traits<T>::result>)
-        coco::stray resolve(T awaitable, F fn, auto &&...)
-        {
-            std::invoke(fn, co_await std::forward<T>(awaitable));
-        }
-
-        template <typename T, typename F>
-            requires(std::is_void_v<typename traits<T>::result>)
-        coco::stray resolve(T awaitable, F fn, auto &&...)
-        {
-            co_await std::forward<T>(awaitable);
-            std::invoke(fn);
         }
 #endif
     } // namespace impl
