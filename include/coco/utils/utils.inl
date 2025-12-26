@@ -3,11 +3,9 @@
 #include "utils.hpp"
 #include "../latch/latch.hpp"
 
-#include <exception>
-#include <functional>
-
 #include <future>
 #include <optional>
+#include <exception>
 
 #include <type_traits>
 
@@ -22,12 +20,12 @@ namespace coco
         try
 #endif
         {
-            std::invoke(fn, co_await std::forward<T>(awaitable));
+            fn(co_await std::forward<T>(awaitable));
         }
 #if defined(__cpp_exceptions) && !defined(COCO_NO_EXCEPTIONS)
         catch (...)
         {
-            std::invoke(except, std::current_exception());
+            except(std::current_exception());
         }
 #endif
 
@@ -39,12 +37,12 @@ namespace coco
 #endif
         {
             co_await std::forward<T>(awaitable);
-            std::invoke(fn);
+            fn();
         }
 #if defined(__cpp_exceptions) && !defined(COCO_NO_EXCEPTIONS)
         catch (...)
         {
-            std::invoke(except, std::current_exception());
+            except(std::current_exception());
         }
 #endif
     } // namespace impl
