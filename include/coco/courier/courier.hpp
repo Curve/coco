@@ -70,8 +70,8 @@ namespace coco
         state *m_state;
 
       public:
-        bool await_ready() const noexcept; // NOLINT(*-nodiscard)
-        void await_suspend(std::coroutine_handle<>) const noexcept;
+        bool await_ready() const noexcept;                          // NOLINT(*-nodiscard)
+        bool await_suspend(std::coroutine_handle<>) const noexcept; // NOLINT(*-nodiscard)
 
       public:
         void await_resume();

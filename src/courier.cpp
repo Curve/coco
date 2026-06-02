@@ -71,15 +71,17 @@ namespace coco
         return !m_state;
     }
 
-    void transition::awaiter::await_suspend(std::coroutine_handle<> handle) const noexcept
+    bool transition::awaiter::await_suspend(std::coroutine_handle<> handle) const noexcept
     {
         if (!m_state)
         {
-            return;
+            return false;
         }
 
         m_state->handle.store(handle, std::memory_order_release);
         m_state->handle.notify_one();
+
+        return true;
     }
 
     void transition::awaiter::await_resume() {}
