@@ -27,4 +27,12 @@ suite<"transitioner"> transitioner_test = []
     };
 
     coco::await(task(std::this_thread::get_id(), std::move(transition)));
+
+    static const auto noop_task = [](auto id, auto transition) -> coco::task<void>
+    {
+        co_await std::move(transition);
+        expect(eq(id, std::this_thread::get_id()));
+    };
+
+    coco::await(noop_task(std::this_thread::get_id(), coco::transition::noop()));
 };

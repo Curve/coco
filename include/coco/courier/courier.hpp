@@ -57,6 +57,9 @@ namespace coco
 
       public:
         [[nodiscard]] awaiter operator co_await() &&;
+
+      public:
+        static transition noop();
     };
 
     struct transition::awaiter

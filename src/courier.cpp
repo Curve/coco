@@ -68,14 +68,24 @@ namespace coco
 
     bool transition::awaiter::await_ready() const noexcept // NOLINT(*-static)
     {
-        return false;
+        return !m_state;
     }
 
     void transition::awaiter::await_suspend(std::coroutine_handle<> handle) const noexcept
     {
+        if (!m_state)
+        {
+            return;
+        }
+
         m_state->handle.store(handle, std::memory_order_release);
         m_state->handle.notify_one();
     }
 
     void transition::awaiter::await_resume() {}
+
+    transition transition::noop()
+    {
+        return {nullptr};
+    }
 } // namespace coco

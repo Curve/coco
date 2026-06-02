@@ -115,6 +115,9 @@ void not_a_coroutine()
 }
 ```
 
+> [!WARNING]
+> Do not use `coco::future<T>` as a primitive to reschedule a coroutine to another thread! Use `coco::courier` instead.
+
 ### `generator<T>`
 
 A simple generator with iterator support.  
@@ -182,5 +185,26 @@ void not_a_coroutine()
     
     // Await multiple awaitables
     auto [r1, r2] = coco::await(coco::when_all(some_task(), some_lazy_task()));
+}
+```
+
+### `courier` / `transition`
+
+A simple primitive that can be used to reschedule a coroutine to another thread / context.  
+Unlike `coco::future<T>`, `coco::transition` is guaranteed to be resumed on the thread that calls `coco::courier::schedule()`.
+
+```cpp
+template <typename F>
+void run_on_thread_pool(F&&);
+
+coco::stray basic()
+{
+    auto [courier, transition] = coco::courier::create();
+    const auto id              = std::this_thread::get_id();
+
+    run_on_thread_pool([courier = std::move(courier)]() mutable { std::move(courier).schedule(); });
+
+    co_await std::move(transition);
+    assert(std::this_thread::get_id() != id);
 }
 ```
