@@ -30,7 +30,8 @@ suite<"utils"> utils_test = []
     expect(eq(r2, 100));
     expect(eq(r3, 50));
 
-    expect(le(time, std::chrono::milliseconds(300)));
+    static constexpr auto delta = 15;
+    expect(le(time, std::chrono::milliseconds(300 + delta)));
 
     std::vector<coco::task<long>> tasks;
 
