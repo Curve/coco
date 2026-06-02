@@ -1,18 +1,19 @@
 cmake_minimum_required(VERSION 3.25)
-project(coco LANGUAGES CXX VERSION 4.3.0)
+project(coco LANGUAGES CXX VERSION 4.4.0)
 
 # +-------------------------------------------------------------------------------------------------------+
 # | Library Options                                                                                       |
 # +-------------------------------------------------------------------------------------------------------+
 
 option(coco_tests      "Build tests"                                                        OFF)
+option(coco_install    "Add install target"                             ${PROJECT_IS_TOP_LEVEL})
 option(coco_exceptions "Enable exception support (Respects -fno-exceptions even if enabled)" ON)
 
 # +-------------------------------------------------------------------------------------------------------+
 # | Create library                                                                                        |
 # +-------------------------------------------------------------------------------------------------------+
 
-add_library(${PROJECT_NAME} STATIC "src/latch.cpp" "src/stray.cpp")
+add_library(${PROJECT_NAME} STATIC "src/latch.cpp" "src/stray.cpp" "src/courier.cpp")
 add_library(cr::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
@@ -49,6 +50,10 @@ endif()
 # +-------------------------------------------------------------------------------------------------------+
 # | Package Config                                                                                        |
 # +-------------------------------------------------------------------------------------------------------+
+
+if (NOT coco_install)
+  return()
+endif()
 
 include("cmake/cpm.cmake")
 
