@@ -2,6 +2,7 @@
 #include <thread>
 
 #include <boost/ut.hpp>
+
 #include <coco/task/task.hpp>
 #include <coco/latch/latch.hpp>
 #include <coco/utils/utils.hpp>

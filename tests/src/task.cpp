@@ -3,6 +3,7 @@
 #include <latch>
 
 #include <boost/ut.hpp>
+
 #include <coco/task/task.hpp>
 #include <coco/utils/utils.hpp>
 
