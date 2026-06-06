@@ -2,7 +2,6 @@
 
 #include "../handle/handle.hpp"
 
-#include <cstdint>
 #include <exception>
 
 #include <atomic>
@@ -43,8 +42,8 @@ namespace coco
     template <typename T>
     struct task<T>::promise_base
     {
+        struct index;
         struct final_awaiter;
-        enum index : std::uint8_t;
 
       public:
         using result = std::conditional_t<std::is_void_v<T>, std::monostate, T>;

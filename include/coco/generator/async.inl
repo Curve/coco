@@ -5,10 +5,14 @@
 namespace coco
 {
     template <typename T>
-    enum async_generator<T>::promise_type::index : std::uint8_t {
-        empty = 0,
-        last  = 1,
-        error = 2,
+    struct async_generator<T>::promise_type::index
+    {
+        enum : std::uint8_t
+        {
+            empty = 0,
+            last  = 1,
+            error = 2,
+        };
     };
 
     template <typename T>
@@ -56,7 +60,7 @@ namespace coco
     }
 
     template <typename T>
-    async_generator<T>::async_generator async_generator<T>::promise_type::get_return_object()
+    async_generator<T> async_generator<T>::promise_type::get_return_object()
     {
         return {handle<promise_type>::from(this)};
     }

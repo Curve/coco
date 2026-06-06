@@ -3,7 +3,6 @@
 #include "../handle/handle.hpp"
 
 #include <variant>
-#include <cstdint>
 
 #include <exception>
 #include <coroutine>
@@ -50,8 +49,8 @@ namespace coco
     template <typename T>
     struct async_generator<T>::promise_type
     {
+        struct index;
         struct yield_type;
-        enum index : std::uint8_t;
 
       public:
         std::coroutine_handle<> waiting;

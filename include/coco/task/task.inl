@@ -7,10 +7,14 @@
 namespace coco
 {
     template <typename T>
-    enum task<T>::promise_base::index : std::uint8_t {
-        none   = 0,
-        result = 1,
-        error  = 2,
+    struct task<T>::promise_base::index
+    {
+        enum : std::uint8_t
+        {
+            none   = 0,
+            result = 1,
+            error  = 2,
+        };
     };
 
     template <typename T>
