@@ -96,7 +96,7 @@ suite<"task"> task_test = []
 
     static auto lazy = [](bool &flag) -> coco::task<void> // NOLINT(*-coroutine-parameters)
     {
-        co_await coco::task<void>::wake_on_await{};
+        co_await coco::task<void>::make_lazy{};
         flag = true;
     };
 
@@ -108,5 +108,14 @@ suite<"task"> task_test = []
         expect(eq(result, false));
         coco::await(std::move(task));
         expect(eq(result, true));
+    };
+
+    "lazy_abandon"_test = []
+    {
+        auto result = false;
+        auto task   = lazy(result);
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(250));
+        expect(eq(result, false));
     };
 };

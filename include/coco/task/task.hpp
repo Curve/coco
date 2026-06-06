@@ -16,8 +16,8 @@ namespace coco
         struct promise_base;
 
       public:
+        struct make_lazy;
         struct promise_type;
-        struct wake_on_await;
 
       private:
         handle<promise_base> m_handle;
@@ -49,15 +49,11 @@ namespace coco
         using result = std::conditional_t<std::is_void_v<T>, std::monostate, T>;
 
       public:
-        std::atomic<bool> has_task{true};
+        bool is_lazy{false};
 
       public:
-        std::atomic<bool> ready;
+        std::atomic<void *> continuation{};
         std::variant<std::monostate, result, std::exception_ptr> value;
-
-      public:
-        std::atomic<std::coroutine_handle<>> wake;
-        std::atomic<std::coroutine_handle<>> continuation;
 
       public:
         task<T> get_return_object();
@@ -99,10 +95,10 @@ namespace coco
     };
 
     template <typename T>
-    struct task<T>::wake_on_await
+    struct task<T>::make_lazy
     {
         static bool await_ready() noexcept;
-        bool await_suspend(std::coroutine_handle<promise_type>) noexcept;
+        void await_suspend(std::coroutine_handle<promise_type>) noexcept;
 
       public:
         static void await_resume() noexcept;

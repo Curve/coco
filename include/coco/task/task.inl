@@ -2,6 +2,7 @@
 
 #include "task.hpp"
 
+#include <bit>
 #include <cstdint>
 
 namespace coco
@@ -15,6 +16,10 @@ namespace coco
             result = 1,
             error  = 2,
         };
+
+        static const inline auto running   = static_cast<void *>(nullptr);
+        static const inline auto completed = std::bit_cast<void *>(std::uintptr_t{1});
+        static const inline auto abandoned = std::bit_cast<void *>(std::uintptr_t{2});
     };
 
     template <typename T>
@@ -36,6 +41,12 @@ namespace coco
     {
         if (!m_handle)
         {
+            return;
+        }
+
+        if (m_handle->is_lazy)
+        {
+            m_handle.destroy();
             return;
         }
 
@@ -69,9 +80,10 @@ namespace coco
     template <typename T>
     void task<T>::promise_base::abandon(handle<promise_base> handle)
     {
-        handle->has_task.store(false, std::memory_order_release);
+        using tag      = promise_base::index;
+        auto *expected = tag::running;
 
-        if (!handle.done())
+        if (handle->continuation.compare_exchange_strong(expected, tag::abandoned, std::memory_order_acq_rel))
         {
             return;
         }
@@ -83,20 +95,17 @@ namespace coco
     void task<T>::promise_base::unhandled_exception()
     {
         value.template emplace<index::error>(std::current_exception());
-        ready.store(true, std::memory_order_release);
     }
 
     inline void task<void>::promise_type::return_void()
     {
         promise_base::value.template emplace<index::result>();
-        promise_base::ready.store(true, std::memory_order_release);
     }
 
     template <typename T>
     void task<T>::promise_type::return_value(T value)
     {
         promise_base::value.template emplace<promise_base::index::result>(std::move(value));
-        promise_base::ready.store(true, std::memory_order_release);
     }
 
     template <typename T>
@@ -108,18 +117,18 @@ namespace coco
     template <typename T>
     std::coroutine_handle<> task<T>::promise_base::final_awaiter::await_suspend(std::coroutine_handle<> handle) noexcept
     {
-        if (auto continuation = m_handle->continuation.exchange(nullptr, std::memory_order_acq_rel))
-        {
-            handle = continuation;
-        }
-        else
-        {
-            handle = std::noop_coroutine();
-        }
+        using tag = promise_base::index;
 
-        if (!m_handle->has_task.load(std::memory_order_acquire))
+        auto *const state = m_handle->continuation.exchange(tag::completed, std::memory_order_acq_rel);
+        handle            = std::noop_coroutine();
+
+        if (state == tag::abandoned)
         {
             m_handle.destroy();
+        }
+        else if (state != tag::running)
+        {
+            handle = std::coroutine_handle<>::from_address(state);
         }
 
         return handle;
@@ -131,41 +140,45 @@ namespace coco
     }
 
     template <typename T>
-    bool task<T>::wake_on_await::await_ready() noexcept
+    bool task<T>::make_lazy::await_ready() noexcept
     {
         return false;
     }
 
     template <typename T>
-    bool task<T>::wake_on_await::await_suspend(std::coroutine_handle<promise_type> handle) noexcept
+    void task<T>::make_lazy::await_suspend(std::coroutine_handle<promise_type> handle) noexcept
     {
-        auto &promise = handle.promise();
-        promise.wake.store(handle, std::memory_order_release);
-        return !promise.continuation.load(std::memory_order_acquire);
+        handle.promise().is_lazy = true;
     }
 
     template <typename T>
-    void task<T>::wake_on_await::await_resume() noexcept
+    void task<T>::make_lazy::await_resume() noexcept
     {
     }
 
     template <typename T>
     bool task<T>::awaiter::await_ready() noexcept
     {
-        return m_handle->ready.load(std::memory_order_acquire);
+        return m_handle->continuation.load(std::memory_order_acquire) == promise_base::index::completed;
     }
 
     template <typename T>
     std::coroutine_handle<> task<T>::awaiter::await_suspend(std::coroutine_handle<> handle) noexcept
     {
-        m_handle->continuation.store(handle, std::memory_order_release);
+        using tag      = promise_base::index;
+        auto *expected = tag::running;
 
-        if (auto wake = m_handle->wake.exchange(nullptr, std::memory_order_acq_rel))
+        if (m_handle->continuation.compare_exchange_strong(expected, handle.address(), std::memory_order_acq_rel))
         {
-            return wake;
+            handle = std::noop_coroutine();
         }
 
-        return std::noop_coroutine();
+        if (std::exchange(m_handle->is_lazy, false))
+        {
+            handle = m_handle.get();
+        }
+
+        return handle;
     }
 
     template <typename T>

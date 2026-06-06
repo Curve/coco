@@ -49,7 +49,7 @@ This coroutine is evaluated eagerly and returns a result of type `T`.
 It is also possible to suspend the task until it is awaited (i.e. make it lazy evaluated) by calling `co_await task<T>::wake_on_await{};` from within it.
 
 > [!WARNING]
-> When using `co_await task<T>::wake_on_await` it is the users responsibility to ensure that the coroutine is actually awaited, otherwise the coroutine may never resume and thus leak memory.
+> Calling `co_await task<T>::make_lazy` more than once or not as the first thing inside of a coroutine, the behavior is undefined. 
 
 ```cpp
 coco::task<int> task()
@@ -60,7 +60,7 @@ coco::task<int> task()
 
 coco::task<int> task_lazy()
 {
-    co_await coco::task<int>::wake_on_await{};
+    co_await coco::task<int>::make_lazy{};
     co_return 10;
 }
 
