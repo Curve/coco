@@ -2,6 +2,7 @@
 
 #include "../handle/handle.hpp"
 
+#include <cstdint>
 #include <exception>
 
 #include <atomic>
@@ -43,6 +44,7 @@ namespace coco
     struct task<T>::promise_base
     {
         struct final_awaiter;
+        enum index : std::uint8_t;
 
       public:
         using result = std::conditional_t<std::is_void_v<T>, std::monostate, T>;

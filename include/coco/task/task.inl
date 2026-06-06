@@ -6,15 +6,12 @@
 
 namespace coco
 {
-    namespace impl
-    {
-        enum type : std::uint8_t
-        {
-            none   = 0,
-            result = 1,
-            error  = 2,
-        };
-    }
+    template <typename T>
+    enum task<T>::promise_base::index : std::uint8_t {
+        none   = 0,
+        result = 1,
+        error  = 2,
+    };
 
     template <typename T>
     task<T>::task(handle<promise_base> handle) : m_handle(std::move(handle))
@@ -81,20 +78,20 @@ namespace coco
     template <typename T>
     void task<T>::promise_base::unhandled_exception()
     {
-        value.template emplace<impl::type::error>(std::current_exception());
+        value.template emplace<index::error>(std::current_exception());
         ready.store(true, std::memory_order_release);
     }
 
     inline void task<void>::promise_type::return_void()
     {
-        promise_base::value.template emplace<impl::type::result>();
+        promise_base::value.template emplace<index::result>();
         promise_base::ready.store(true, std::memory_order_release);
     }
 
     template <typename T>
     void task<T>::promise_type::return_value(T value)
     {
-        promise_base::value.template emplace<impl::type::result>(std::move(value));
+        promise_base::value.template emplace<promise_base::index::result>(std::move(value));
         promise_base::ready.store(true, std::memory_order_release);
     }
 
@@ -170,14 +167,14 @@ namespace coco
     template <typename T>
     T task<T>::awaiter::await_resume()
     {
-        if (auto *exception = std::get_if<impl::type::error>(&m_handle->value))
+        if (auto *const exception = std::get_if<promise_base::index::error>(&m_handle->value))
         {
             std::rethrow_exception(*exception);
         }
 
         if constexpr (!std::is_void_v<T>)
         {
-            return std::move(std::get<impl::type::result>(m_handle->value));
+            return std::move(std::get<promise_base::index::result>(m_handle->value));
         }
     }
 
