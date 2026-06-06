@@ -103,6 +103,7 @@ namespace coco
 
       public:
         void return_void();
+        void await_transform() = delete;
         void unhandled_exception();
     };
 } // namespace coco
