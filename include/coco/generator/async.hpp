@@ -25,8 +25,8 @@ namespace coco
         struct sentinel;
 
       private:
-        template <detail::one_of<iterator, void>>
-        class awaitable;
+        template <typename>
+        struct awaitable;
 
       private:
         handle<promise_type> m_handle;
@@ -114,9 +114,12 @@ namespace coco
     };
 
     template <typename T>
-    template <detail::one_of<typename async_generator<T>::iterator, void> U>
-    class async_generator<T>::awaitable
+    template <typename U>
+    struct async_generator<T>::awaitable
     {
+        static_assert(detail::one_of<U, iterator, void>);
+
+      private:
         handle<promise_type> m_handle;
 
       public:

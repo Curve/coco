@@ -2,6 +2,8 @@
 
 #include "async.hpp"
 
+#include <cstdint>
+
 namespace coco
 {
     template <typename T>
@@ -148,20 +150,20 @@ namespace coco
     }
 
     template <typename T>
-    template <detail::one_of<typename async_generator<T>::iterator, void> U>
+    template <typename U>
     async_generator<T>::awaitable<U>::awaitable(handle<promise_type> handle) : m_handle(std::move(handle))
     {
     }
 
     template <typename T>
-    template <detail::one_of<typename async_generator<T>::iterator, void> U>
+    template <typename U>
     bool async_generator<T>::awaitable<U>::await_ready() noexcept
     {
         return false;
     }
 
     template <typename T>
-    template <detail::one_of<typename async_generator<T>::iterator, void> U>
+    template <typename U>
     std::coroutine_handle<> async_generator<T>::awaitable<U>::await_suspend(std::coroutine_handle<> handle) noexcept
     {
         m_handle->waiting = std::move(handle);
@@ -169,7 +171,7 @@ namespace coco
     }
 
     template <typename T>
-    template <detail::one_of<typename async_generator<T>::iterator, void> U>
+    template <typename U>
     U async_generator<T>::awaitable<U>::await_resume() noexcept
     {
         if constexpr (std::same_as<U, iterator>)
