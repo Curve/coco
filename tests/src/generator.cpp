@@ -1,7 +1,14 @@
+#include "sleep.hpp"
+
 #include <ranges>
 #include <numeric>
 
 #include <boost/ut.hpp>
+
+#include <coco/task/task.hpp>
+#include <coco/utils/utils.hpp>
+
+#include <coco/generator/async.hpp>
 #include <coco/generator/generator.hpp>
 
 using namespace boost::ut;
@@ -17,6 +24,32 @@ suite<"generator"> generator_test = []
         }
     };
 
+    static auto async_generate = []() -> coco::async_generator<int>
+    {
+        for (auto i = 0; 10 > i; ++i)
+        {
+            co_await coco::tests::co_sleep{std::chrono::milliseconds{150}};
+            co_yield i;
+        }
+    };
+
+    static auto async_iterate = []() -> coco::task<std::pair<int, unsigned>>
+    {
+        auto i   = 0u;
+        auto sum = 0;
+
+        auto gen = async_generate();
+        auto end = gen.end();
+
+        for (auto it = co_await gen.begin(); it != end; co_await ++it)
+        {
+            ++i;
+            sum += *it;
+        }
+
+        co_return std::make_pair(sum, i);
+    };
+
     "iterate"_test = []
     {
         auto i = 0;
@@ -27,6 +60,13 @@ suite<"generator"> generator_test = []
         }
 
         expect(eq(i, 10));
+    };
+
+    "async"_test = []
+    {
+        auto [sum, iterations] = coco::await(async_iterate());
+        expect(eq(sum, 45));
+        expect(eq(iterations, 10u));
     };
 
     "ranges"_test = []
