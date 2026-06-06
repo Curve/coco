@@ -2,6 +2,7 @@
 
 #include "../handle/handle.hpp"
 
+#include <atomic>
 #include <variant>
 
 #include <exception>
@@ -53,7 +54,7 @@ namespace coco
         struct yield_type;
 
       public:
-        std::coroutine_handle<> waiting;
+        std::atomic<std::coroutine_handle<>> waiting;
         std::variant<std::monostate, T, std::exception_ptr> value;
 
       public:

@@ -141,7 +141,7 @@ namespace coco
     template <typename T>
     std::coroutine_handle<> async_generator<T>::promise_type::yield_type::await_suspend(std::coroutine_handle<>) noexcept
     {
-        return std::exchange(m_handle->waiting, std::noop_coroutine());
+        return m_handle->waiting.exchange(std::noop_coroutine(), std::memory_order_acq_rel);
     }
 
     template <typename T>
@@ -166,7 +166,7 @@ namespace coco
     template <typename U>
     std::coroutine_handle<> async_generator<T>::awaitable<U>::await_suspend(std::coroutine_handle<> handle) noexcept
     {
-        m_handle->waiting = std::move(handle);
+        m_handle->waiting.store(std::move(handle), std::memory_order_release);
         return m_handle.get();
     }
 
