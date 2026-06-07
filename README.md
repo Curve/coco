@@ -46,10 +46,10 @@ coco::stray basic()
 ### `task<T>`
 
 This coroutine is evaluated eagerly and returns a result of type `T`.  
-It is also possible to suspend the task until it is awaited (i.e. make it lazy evaluated) by calling `co_await task<T>::wake_on_await{};` from within it.
+It is also possible to suspend the task until it is awaited (i.e. make it lazy evaluated) by calling `co_await task<T>::make_lazy{};` from within it.
 
 > [!WARNING]
-> Calling `co_await task<T>::make_lazy` more than once or not as the first thing inside of a coroutine, the behavior is undefined. 
+> When calling `co_await task<T>::make_lazy` more than once or not as **the first thing** inside of a coroutine, the behavior is undefined. 
 
 ```cpp
 coco::task<int> task()
