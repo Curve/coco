@@ -57,16 +57,14 @@ namespace coco
     }
 
     template <typename T>
-    template <typename U>
-        requires std::equality_comparable_with<T, U>
+    template <std::equality_comparable_with<T> U>
     std::optional<T> generator<T>::find(const U &value) &&
     {
         return std::move(*this).find_if([&](auto &&other) { return value == other; });
     }
 
     template <typename T>
-    template <typename U>
-        requires std::equality_comparable_with<T, U>
+    template <std::equality_comparable_with<T> U>
     std::optional<T> generator<T>::skip(const U &value) &&
     {
         return std::move(*this).find_if([&](auto &&other) { return value != other; });
@@ -129,8 +127,7 @@ namespace coco
     }
 
     template <typename T>
-    template <typename U>
-        requires std::constructible_from<T, U>
+    template <std::convertible_to<T> U>
     std::suspend_always generator<T>::promise_type::yield_value(U &&val)
     {
         value.template emplace<T>(std::forward<U>(val));

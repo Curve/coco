@@ -45,12 +45,10 @@ namespace coco
         std::optional<T> find_if(const Pred &) &&;
 
       public:
-        template <typename U>
-            requires std::equality_comparable_with<T, U>
+        template <std::equality_comparable_with<T> U>
         std::optional<T> find(const U &) &&;
 
-        template <typename U>
-            requires std::equality_comparable_with<T, U>
+        template <std::equality_comparable_with<T> U>
         std::optional<T> skip(const U &) &&;
     };
 
@@ -97,8 +95,7 @@ namespace coco
         static std::suspend_always final_suspend() noexcept;
 
       public:
-        template <typename U>
-            requires std::constructible_from<T, U>
+        template <std::convertible_to<T> U>
         std::suspend_always yield_value(U &&);
 
       public:

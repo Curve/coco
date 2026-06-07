@@ -81,8 +81,7 @@ namespace coco
     }
 
     template <typename T>
-    template <typename U>
-        requires std::constructible_from<T, U>
+    template <std::convertible_to<T> U>
     async_generator<T>::promise_type::yield_type async_generator<T>::promise_type::yield_value(U &&val)
     {
         value.template emplace<index::last>(std::forward<U>(val));

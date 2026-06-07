@@ -20,8 +20,7 @@ namespace coco
         using type = void;
     };
 
-    template <typename T>
-        requires awaiter<T>
+    template <awaiter T>
     struct awaiter_of<T>
     {
         using type = T;
@@ -41,8 +40,7 @@ namespace coco
         using type = decltype(operator co_await(std::declval<T>()));
     };
 
-    template <typename T>
-        requires awaitable<T>
+    template <awaitable T>
     struct traits<T>
     {
         using awaiter = awaiter_of_t<T>;

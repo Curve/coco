@@ -65,8 +65,7 @@ namespace coco
         yield_type final_suspend() noexcept;
 
       public:
-        template <typename U>
-            requires std::constructible_from<T, U>
+        template <std::convertible_to<T> U>
         yield_type yield_value(U &&);
 
       public:
