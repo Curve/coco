@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.25)
-project(coco LANGUAGES CXX VERSION 4.6.0)
+project(coco LANGUAGES CXX VERSION 4.7.0)
 
 # +-------------------------------------------------------------------------------------------------------+
 # | Library Options                                                                                       |
 # +-------------------------------------------------------------------------------------------------------+
 
 option(coco_tests      "Build tests"                                                        OFF)
-option(coco_install    "Add install target"                             ${PROJECT_IS_TOP_LEVEL})
+option(coco_install    "Add install target"                                                  ON)
 option(coco_exceptions "Enable exception support (Respects -fno-exceptions even if enabled)" ON)
 
 # +-------------------------------------------------------------------------------------------------------+
