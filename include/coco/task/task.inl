@@ -2,7 +2,7 @@
 
 #include "task.hpp"
 
-#include <bit>
+#include <memory>
 #include <cstdint>
 
 namespace coco
@@ -17,9 +17,18 @@ namespace coco
             error  = 2,
         };
 
-        static const inline auto running   = static_cast<void *>(nullptr);
-        static const inline auto completed = std::bit_cast<void *>(std::uintptr_t{1});
-        static const inline auto abandoned = std::bit_cast<void *>(std::uintptr_t{2});
+      private:
+        template <std::uint8_t>
+        static void *make()
+        {
+            static bool buffer{};
+            return std::addressof(buffer);
+        }
+
+      public:
+        static inline auto *running   = static_cast<void *>(nullptr);
+        static inline auto *completed = make<1>();
+        static inline auto *abandoned = make<2>();
     };
 
     template <typename T>
