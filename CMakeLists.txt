@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.25)
-project(coco LANGUAGES CXX VERSION 4.7.0)
+project(coco LANGUAGES CXX VERSION 4.7.1)
 
 # +-------------------------------------------------------------------------------------------------------+
 # | Library Options                                                                                       |
