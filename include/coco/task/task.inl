@@ -26,9 +26,9 @@ namespace coco
         }
 
       public:
-        static inline auto *running   = static_cast<void *>(nullptr);
-        static inline auto *completed = make<1>();
-        static inline auto *abandoned = make<2>();
+        static inline void *running   = static_cast<void *>(nullptr);
+        static inline void *completed = make<1>();
+        static inline void *abandoned = make<2>();
     };
 
     template <typename T>
