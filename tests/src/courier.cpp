@@ -9,7 +9,7 @@
 using namespace boost::ut;
 
 // NOLINTNEXTLINE
-suite<"transitioner"> transitioner_test = []
+suite<"courier"> courier_test = []
 {
     static const auto spawn_thread = [](coco::courier courier)
     {
