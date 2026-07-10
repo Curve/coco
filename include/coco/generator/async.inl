@@ -6,8 +6,7 @@
 
 namespace coco
 {
-    template <typename T>
-    struct async_generator<T>::promise_type::index
+    namespace detail::of_generator::index
     {
         enum : std::uint8_t
         {
@@ -15,7 +14,7 @@ namespace coco
             last  = 1,
             error = 2,
         };
-    };
+    } // namespace detail::of_generator::index
 
     template <typename T>
     async_generator<T>::async_generator(handle<promise_type> handle) : m_handle(std::move(handle))
@@ -84,20 +83,20 @@ namespace coco
     template <std::convertible_to<T> U>
     async_generator<T>::promise_type::yield_type async_generator<T>::promise_type::yield_value(U &&val)
     {
-        value.template emplace<index::last>(std::forward<U>(val));
+        value.template emplace<detail::of_generator::index::last>(std::forward<U>(val));
         return {handle<promise_type>::from(this)};
     }
 
     template <typename T>
     void async_generator<T>::promise_type::return_void() noexcept
     {
-        value.template emplace<index::empty>();
+        value.template emplace<detail::of_generator::index::empty>();
     }
 
     template <typename T>
     void async_generator<T>::promise_type::unhandled_exception() noexcept
     {
-        value.template emplace<index::error>(std::current_exception());
+        value.template emplace<detail::of_generator::index::error>(std::current_exception());
     }
 
     template <typename T>
@@ -111,12 +110,12 @@ namespace coco
     template <typename T>
     T &async_generator<T>::iterator::operator*() const
     {
-        if (auto *const exception = std::get_if<promise_type::index::error>(&m_handle->value); exception)
+        if (auto *const exception = std::get_if<detail::of_generator::index::error>(&m_handle->value); exception)
         {
             std::rethrow_exception(*exception);
         }
 
-        return std::get<promise_type::index::last>(m_handle->value);
+        return std::get<detail::of_generator::index::last>(m_handle->value);
     }
 
     template <typename T>
@@ -128,7 +127,7 @@ namespace coco
     template <typename T>
     bool async_generator<T>::iterator::operator==(const sentinel &) const
     {
-        return m_handle->value.index() == promise_type::index::empty;
+        return m_handle->value.index() == detail::of_generator::index::empty;
     }
 
     template <typename T>

@@ -42,7 +42,6 @@ namespace coco
     template <typename T>
     struct task<T>::promise_base
     {
-        struct index;
         struct final_awaiter;
 
       public:

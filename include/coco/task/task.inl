@@ -7,8 +7,7 @@
 
 namespace coco
 {
-    template <typename T>
-    struct task<T>::promise_base::index
+    namespace detail::of_task::index
     {
         enum : std::uint8_t
         {
@@ -16,20 +15,21 @@ namespace coco
             result = 1,
             error  = 2,
         };
+    } // namespace detail::of_task::index
 
-      private:
+    namespace detail::of_task::tag
+    {
         template <std::uint8_t>
-        static void *make()
+        void *make()
         {
-            static bool buffer{};
+            [[maybe_unused]] static std::uint8_t buffer{};
             return std::addressof(buffer);
         }
 
-      public:
-        static inline void *running   = static_cast<void *>(nullptr);
-        static inline void *completed = make<1>();
-        static inline void *abandoned = make<2>();
-    };
+        inline void *running   = static_cast<void *>(nullptr);
+        inline void *completed = make<1>();
+        inline void *abandoned = make<2>();
+    } // namespace detail::of_task::tag
 
     template <typename T>
     task<T>::task(handle<promise_base> handle) : m_handle(std::move(handle))
@@ -89,7 +89,7 @@ namespace coco
     template <typename T>
     void task<T>::promise_base::abandon(handle<promise_base> handle)
     {
-        using tag      = promise_base::index;
+        namespace tag  = detail::of_task::tag;
         auto *expected = tag::running;
 
         if (handle->continuation.compare_exchange_strong(expected, tag::abandoned, std::memory_order_acq_rel))
@@ -103,18 +103,18 @@ namespace coco
     template <typename T>
     void task<T>::promise_base::unhandled_exception()
     {
-        value.template emplace<index::error>(std::current_exception());
+        value.template emplace<detail::of_task::index::error>(std::current_exception());
     }
 
     inline void task<void>::promise_type::return_void()
     {
-        promise_base::value.template emplace<index::result>();
+        promise_base::value.template emplace<detail::of_task::index::result>();
     }
 
     template <typename T>
     void task<T>::promise_type::return_value(T value)
     {
-        promise_base::value.template emplace<promise_base::index::result>(std::move(value));
+        promise_base::value.template emplace<detail::of_task::index::result>(std::move(value));
     }
 
     template <typename T>
@@ -126,7 +126,7 @@ namespace coco
     template <typename T>
     std::coroutine_handle<> task<T>::promise_base::final_awaiter::await_suspend(std::coroutine_handle<> handle) noexcept
     {
-        using tag = promise_base::index;
+        namespace tag = detail::of_task::tag;
 
         auto *const state = m_handle->continuation.exchange(tag::completed, std::memory_order_acq_rel);
         handle            = std::noop_coroutine();
@@ -168,14 +168,13 @@ namespace coco
     template <typename T>
     bool task<T>::awaiter::await_ready() noexcept
     {
-        return m_handle->continuation.load(std::memory_order_acquire) == promise_base::index::completed;
+        return m_handle->continuation.load(std::memory_order_acquire) == detail::of_task::tag::completed;
     }
 
     template <typename T>
     std::coroutine_handle<> task<T>::awaiter::await_suspend(std::coroutine_handle<> handle) noexcept
     {
-        using tag      = promise_base::index;
-        auto *expected = tag::running;
+        auto *expected = detail::of_task::tag::running;
 
         if (m_handle->continuation.compare_exchange_strong(expected, handle.address(), std::memory_order_acq_rel))
         {
@@ -193,14 +192,14 @@ namespace coco
     template <typename T>
     T task<T>::awaiter::await_resume()
     {
-        if (auto *const exception = std::get_if<promise_base::index::error>(&m_handle->value))
+        if (auto *const exception = std::get_if<detail::of_task::index::error>(&m_handle->value))
         {
             std::rethrow_exception(*exception);
         }
 
         if constexpr (!std::is_void_v<T>)
         {
-            return std::move(std::get<promise_base::index::result>(m_handle->value));
+            return std::move(std::get<detail::of_task::index::result>(m_handle->value));
         }
     }
 
