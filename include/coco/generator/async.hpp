@@ -10,7 +10,7 @@
 
 namespace coco
 {
-    namespace detail
+    namespace detail::of_generator
     {
         template <typename T, typename... Ts>
         concept one_of = (std::same_as<T, Ts> || ...);
@@ -50,7 +50,6 @@ namespace coco
     template <typename T>
     struct async_generator<T>::promise_type
     {
-        struct index;
         struct yield_type;
 
       public:
@@ -117,7 +116,7 @@ namespace coco
     template <typename U>
     struct async_generator<T>::awaitable
     {
-        static_assert(detail::one_of<U, iterator, void>);
+        static_assert(detail::of_generator::one_of<U, iterator, void>);
 
       private:
         handle<promise_type> m_handle;

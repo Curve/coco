@@ -9,14 +9,27 @@
 
 namespace coco
 {
-    template <typename T>
+    struct task_options
+    {
+        bool lazy{false};
+    };
+
+    namespace detail::of_task
+    {
+        template <typename T, task_options>
+        struct promise_type;
+    }
+
+    template <typename T, task_options opts = {}>
     class task
     {
+        friend detail::of_task::promise_type<T, opts>;
+
+      private:
         struct awaiter;
         struct promise_base;
 
       public:
-        struct make_lazy;
         struct promise_type;
 
       private:
@@ -39,27 +52,23 @@ namespace coco
         [[nodiscard]] awaiter operator co_await() &&;
     };
 
-    template <typename T>
-    struct task<T>::promise_base
+    template <typename T, task_options opts>
+    struct task<T, opts>::promise_base
     {
-        struct index;
         struct final_awaiter;
 
       public:
         using result = std::conditional_t<std::is_void_v<T>, std::monostate, T>;
 
       public:
-        bool is_lazy{false};
-
-      public:
         std::atomic<void *> continuation{};
         std::variant<std::monostate, result, std::exception_ptr> value;
 
       public:
-        task<T> get_return_object();
+        task<T, opts> get_return_object();
 
       public:
-        std::suspend_never initial_suspend();
+        auto initial_suspend();
         final_awaiter final_suspend() noexcept;
 
       public:
@@ -69,20 +78,25 @@ namespace coco
         static void abandon(handle<promise_base>);
     };
 
-    template <>
-    struct task<void>::promise_type : task<void>::promise_base
-    {
-        void return_void();
-    };
-
-    template <typename T>
-    struct task<T>::promise_type : task<T>::promise_base
+    template <typename T, task_options opts>
+    struct detail::of_task::promise_type : task<T, opts>::promise_base
     {
         void return_value(T);
     };
 
-    template <typename T>
-    struct task<T>::promise_base::final_awaiter
+    template <task_options opts>
+    struct detail::of_task::promise_type<void, opts> : coco::task<void, opts>::promise_base
+    {
+        void return_void();
+    };
+
+    template <typename T, task_options opts>
+    struct task<T, opts>::promise_type : detail::of_task::promise_type<T, opts>
+    {
+    };
+
+    template <typename T, task_options opts>
+    struct task<T, opts>::promise_base::final_awaiter
     {
         handle<promise_base> m_handle;
 
@@ -94,18 +108,8 @@ namespace coco
         void await_resume() noexcept;
     };
 
-    template <typename T>
-    struct task<T>::make_lazy
-    {
-        static bool await_ready() noexcept;
-        void await_suspend(std::coroutine_handle<promise_type>) noexcept;
-
-      public:
-        static void await_resume() noexcept;
-    };
-
-    template <typename T>
-    struct task<T>::awaiter
+    template <typename T, task_options opts>
+    struct task<T, opts>::awaiter
     {
         handle<promise_base> m_handle;
 

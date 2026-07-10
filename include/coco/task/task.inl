@@ -7,8 +7,7 @@
 
 namespace coco
 {
-    template <typename T>
-    struct task<T>::promise_base::index
+    namespace detail::of_task::index
     {
         enum : std::uint8_t
         {
@@ -16,44 +15,51 @@ namespace coco
             result = 1,
             error  = 2,
         };
+    } // namespace detail::of_task::index
 
-      private:
+    namespace detail::of_task::tag
+    {
         template <std::uint8_t>
-        static void *make()
+        void *make()
         {
-            static bool buffer{};
+            [[maybe_unused]] static std::uint8_t buffer{};
             return std::addressof(buffer);
         }
 
-      public:
-        static inline void *running   = static_cast<void *>(nullptr);
-        static inline void *completed = make<1>();
-        static inline void *abandoned = make<2>();
-    };
+        template <>
+        inline void *make<0>()
+        {
+            return nullptr;
+        }
 
-    template <typename T>
-    task<T>::task(handle<promise_base> handle) : m_handle(std::move(handle))
+        inline void *running   = make<0>();
+        inline void *completed = make<1>();
+        inline void *abandoned = make<2>();
+    } // namespace detail::of_task::tag
+
+    template <typename T, task_options opts>
+    task<T, opts>::task(handle<promise_base> handle) : m_handle(std::move(handle))
     {
     }
 
-    template <typename T>
-    task<T>::task() = default;
+    template <typename T, task_options opts>
+    task<T, opts>::task() = default;
 
-    template <typename T>
-    task<T>::task(task &&) noexcept = default;
+    template <typename T, task_options opts>
+    task<T, opts>::task(task &&) noexcept = default;
 
-    template <typename T>
-    task<T> &task<T>::operator=(task &&) noexcept = default;
+    template <typename T, task_options opts>
+    task<T, opts> &task<T, opts>::operator=(task &&) noexcept = default;
 
-    template <typename T>
-    task<T>::~task()
+    template <typename T, task_options opts>
+    task<T, opts>::~task()
     {
         if (!m_handle)
         {
             return;
         }
 
-        if (m_handle->is_lazy)
+        if constexpr (opts.lazy)
         {
             m_handle.destroy();
             return;
@@ -62,34 +68,41 @@ namespace coco
         promise_base::abandon(m_handle);
     }
 
-    template <typename T>
-    task<T>::awaiter task<T>::operator co_await() &&
+    template <typename T, task_options opts>
+    task<T, opts>::awaiter task<T, opts>::operator co_await() &&
     {
         return awaiter{std::move(m_handle)};
     }
 
-    template <typename T>
-    task<T> task<T>::promise_base::get_return_object()
+    template <typename T, task_options opts>
+    task<T, opts> task<T, opts>::promise_base::get_return_object()
     {
         return {handle<promise_base>::from(this)};
     }
 
-    template <typename T>
-    std::suspend_never task<T>::promise_base::initial_suspend()
+    template <typename T, task_options opts>
+    auto task<T, opts>::promise_base::initial_suspend()
     {
-        return {};
+        if constexpr (opts.lazy)
+        {
+            return std::suspend_always{};
+        }
+        else
+        {
+            return std::suspend_never{};
+        }
     }
 
-    template <typename T>
-    task<T>::promise_base::final_awaiter task<T>::promise_base::final_suspend() noexcept
+    template <typename T, task_options opts>
+    task<T, opts>::promise_base::final_awaiter task<T, opts>::promise_base::final_suspend() noexcept
     {
         return {handle<promise_base>::from(this)};
     }
 
-    template <typename T>
-    void task<T>::promise_base::abandon(handle<promise_base> handle)
+    template <typename T, task_options opts>
+    void task<T, opts>::promise_base::abandon(handle<promise_base> handle)
     {
-        using tag      = promise_base::index;
+        namespace tag  = detail::of_task::tag;
         auto *expected = tag::running;
 
         if (handle->continuation.compare_exchange_strong(expected, tag::abandoned, std::memory_order_acq_rel))
@@ -100,33 +113,34 @@ namespace coco
         handle.destroy();
     }
 
-    template <typename T>
-    void task<T>::promise_base::unhandled_exception()
+    template <typename T, task_options opts>
+    void task<T, opts>::promise_base::unhandled_exception()
     {
-        value.template emplace<index::error>(std::current_exception());
+        value.template emplace<detail::of_task::index::error>(std::current_exception());
     }
 
-    inline void task<void>::promise_type::return_void()
+    template <task_options opts>
+    void detail::of_task::promise_type<void, opts>::return_void()
     {
-        promise_base::value.template emplace<index::result>();
+        task<void, opts>::promise_base::value.template emplace<detail::of_task::index::result>();
     }
 
-    template <typename T>
-    void task<T>::promise_type::return_value(T value)
+    template <typename T, task_options opts>
+    void detail::of_task::promise_type<T, opts>::return_value(T value)
     {
-        promise_base::value.template emplace<promise_base::index::result>(std::move(value));
+        task<T, opts>::promise_base::value.template emplace<detail::of_task::index::result>(std::move(value));
     }
 
-    template <typename T>
-    bool task<T>::promise_base::final_awaiter::await_ready() noexcept
+    template <typename T, task_options opts>
+    bool task<T, opts>::promise_base::final_awaiter::await_ready() noexcept
     {
         return false;
     }
 
-    template <typename T>
-    std::coroutine_handle<> task<T>::promise_base::final_awaiter::await_suspend(std::coroutine_handle<> handle) noexcept
+    template <typename T, task_options opt>
+    std::coroutine_handle<> task<T, opt>::promise_base::final_awaiter::await_suspend(std::coroutine_handle<> handle) noexcept
     {
-        using tag = promise_base::index;
+        namespace tag = detail::of_task::tag;
 
         auto *const state = m_handle->continuation.exchange(tag::completed, std::memory_order_acq_rel);
         handle            = std::noop_coroutine();
@@ -143,46 +157,28 @@ namespace coco
         return handle;
     }
 
-    template <typename T>
-    void task<T>::promise_base::final_awaiter::await_resume() noexcept
+    template <typename T, task_options opts>
+    void task<T, opts>::promise_base::final_awaiter::await_resume() noexcept
     {
     }
 
-    template <typename T>
-    bool task<T>::make_lazy::await_ready() noexcept
+    template <typename T, task_options opts>
+    bool task<T, opts>::awaiter::await_ready() noexcept
     {
-        return false;
+        return m_handle->continuation.load(std::memory_order_acquire) == detail::of_task::tag::completed;
     }
 
-    template <typename T>
-    void task<T>::make_lazy::await_suspend(std::coroutine_handle<promise_type> handle) noexcept
+    template <typename T, task_options opts>
+    std::coroutine_handle<> task<T, opts>::awaiter::await_suspend(std::coroutine_handle<> handle) noexcept
     {
-        handle.promise().is_lazy = true;
-    }
-
-    template <typename T>
-    void task<T>::make_lazy::await_resume() noexcept
-    {
-    }
-
-    template <typename T>
-    bool task<T>::awaiter::await_ready() noexcept
-    {
-        return m_handle->continuation.load(std::memory_order_acquire) == promise_base::index::completed;
-    }
-
-    template <typename T>
-    std::coroutine_handle<> task<T>::awaiter::await_suspend(std::coroutine_handle<> handle) noexcept
-    {
-        using tag      = promise_base::index;
-        auto *expected = tag::running;
+        auto *expected = detail::of_task::tag::running;
 
         if (m_handle->continuation.compare_exchange_strong(expected, handle.address(), std::memory_order_acq_rel))
         {
             handle = std::noop_coroutine();
         }
 
-        if (std::exchange(m_handle->is_lazy, false))
+        if constexpr (opts.lazy)
         {
             handle = m_handle.get();
         }
@@ -190,22 +186,22 @@ namespace coco
         return handle;
     }
 
-    template <typename T>
-    T task<T>::awaiter::await_resume()
+    template <typename T, task_options opts>
+    T task<T, opts>::awaiter::await_resume()
     {
-        if (auto *const exception = std::get_if<promise_base::index::error>(&m_handle->value))
+        if (auto *const exception = std::get_if<detail::of_task::index::error>(&m_handle->value))
         {
             std::rethrow_exception(*exception);
         }
 
         if constexpr (!std::is_void_v<T>)
         {
-            return std::move(std::get<promise_base::index::result>(m_handle->value));
+            return std::move(std::get<detail::of_task::index::result>(m_handle->value));
         }
     }
 
-    template <typename T>
-    task<T>::awaiter::~awaiter()
+    template <typename T, task_options opts>
+    task<T, opts>::awaiter::~awaiter()
     {
         if (!m_handle)
         {

@@ -10,6 +10,9 @@
 using namespace boost::ut;
 using namespace coco::tests;
 
+template <typename T>
+using lazy_task = coco::task<T, {.lazy = true}>;
+
 // NOLINTNEXTLINE
 suite<"task"> task_test = []
 {
@@ -94,10 +97,10 @@ suite<"task"> task_test = []
         expect(eq(result, true));
     };
 
-    static auto lazy = [](bool &flag) -> coco::task<void> // NOLINT(*-coroutine-parameters)
+    static auto lazy = [](bool &flag) -> lazy_task<void> // NOLINT(*-coroutine-parameters)
     {
-        co_await coco::task<void>::make_lazy{};
         flag = true;
+        co_return;
     };
 
     "lazy"_test = []
